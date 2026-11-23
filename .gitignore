@@ -1,0 +1,29 @@
+# Dados e modelos treinados
+data/
+artifacts/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+.ipynb_checkpoints/
+
+# Bancos locais
+*.db
+*.sqlite3
+
+# Ambiente
+.env
+
+# Editores e SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
