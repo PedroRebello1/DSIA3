@@ -1,0 +1,29 @@
+[project]
+name = "steam-recsys"
+version = "0.1.0"
+description = "API de recomendação de jogos da Steam (FastAPI + modelo híbrido)"
+requires-python = ">=3.12"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["app/db/migrations/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM"]
+
+[tool.ruff.lint.per-file-ignores]
+"notebooks/*" = ["E402"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-ra"
+
+[tool.coverage.run]
+source = ["app", "recsys"]
+omit = ["app/db/migrations/*"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
