@@ -1,0 +1,9 @@
+# Lista de permissão: só o necessário entra no contexto de build.
+*
+!requirements.txt
+!alembic.ini
+!app/
+!recsys/
+!scripts/
+**/__pycache__
+**/*.py[cod]
