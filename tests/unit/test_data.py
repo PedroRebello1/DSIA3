@@ -10,21 +10,27 @@ from recsys.data import (
     clean_plays,
     clean_purchases,
     confidence_score,
+    game_id_aliases,
     load_dataset,
 )
 
 
 @pytest.fixture
 def raw_dir(tmp_path):
-    """Dataset mínimo no formato original (TSV com cabeçalho)."""
+    """Dataset mínimo no formato original (TSV com cabeçalho).
+
+    O jogo 5 ("Fallout 4 ") repete o nome do jogo 1 com um espaço no fim.
+    """
     (tmp_path / "game_purchase.dat").write_text(
-        "User_ID\tGame_ID\tPurchase\n1\t1\t1.0\n1\t2\t1.0\n1\t2\t1.0\n2\t1\t1.0\n2\t3\t1.0\n"
+        "User_ID\tGame_ID\tPurchase\n"
+        "1\t1\t1.0\n1\t2\t1.0\n1\t2\t1.0\n2\t1\t1.0\n2\t3\t1.0\n2\t5\t1.0\n"
     )
     (tmp_path / "game_play.dat").write_text(
-        "User_ID\tGame_ID\tHours\n1\t1\t10.0\n2\t1\t1.5\n2\t1\t0.5\n"
+        "User_ID\tGame_ID\tHours\n1\t1\t10.0\n2\t1\t1.5\n2\t1\t0.5\n2\t5\t1.0\n"
     )
     (tmp_path / "item_info.dat").write_text(
         "Game_ID\tGame Name\n1\tFallout 4\n2\t Dota 2 \n3\tPortal 2\n4\tSem Jogadores\n"
+        "5\tFallout 4 \n"
     )
     (tmp_path / "user_info.dat").write_text("New_ID\tReal_ID\n1\t151603712\n2\t187131847\n")
     return tmp_path
@@ -56,6 +62,20 @@ def test_clean_plays_soma_horas_duplicadas_e_trata_negativas():
     assert out[2] == 0.0
 
 
+def test_game_id_aliases_unifica_nomes_repetidos():
+    raw = pd.DataFrame({"Game_ID": [7, 3, 9], "Game Name": ["Portal ", "Portal", "Dota 2"]})
+
+    assert game_id_aliases(raw) == {7: 3}
+
+
+def test_clean_purchases_e_plays_aplicam_aliases():
+    purchases = pd.DataFrame({"User_ID": [1, 1], "Game_ID": [3, 7], "Purchase": [1.0, 1.0]})
+    plays = pd.DataFrame({"User_ID": [1, 1], "Game_ID": [3, 7], "Hours": [1.0, 2.0]})
+
+    assert clean_purchases(purchases, {7: 3}).to_dict("records") == [{"user_id": 1, "game_id": 3}]
+    assert clean_plays(plays, {7: 3})["hours"].tolist() == [3.0]
+
+
 def test_clean_games_tira_espacos_e_cria_tags():
     raw = pd.DataFrame({"Game_ID": [2, 1], "Game Name": [" Dota 2 ", "Fallout 4"]})
 
@@ -64,6 +84,14 @@ def test_clean_games_tira_espacos_e_cria_tags():
     assert out["game_id"].tolist() == [1, 2]
     assert out["name"].tolist() == ["Fallout 4", "Dota 2"]
     assert out["tags"].tolist() == [[], []]
+
+
+def test_clean_games_mantem_menor_id_para_nome_repetido():
+    raw = pd.DataFrame({"Game_ID": [7, 3], "Game Name": ["Portal ", "Portal"]})
+
+    assert clean_games(raw)[["game_id", "name"]].to_dict("records") == [
+        {"game_id": 3, "name": "Portal"}
+    ]
 
 
 def test_build_interactions_une_compras_e_horas():
@@ -84,8 +112,10 @@ def test_load_dataset(raw_dir):
 
     inter = ds.interactions.set_index(["user_id", "game_id"])
     assert len(inter) == 4
-    assert inter.loc[(2, 1), "hours"] == pytest.approx(2.0)
-    assert inter.loc[(2, 1), "score"] == pytest.approx(1 + 0.5 * np.log1p(2.0))
+    # Jogo 5 unificado com o 1: horas somadas (1.5 + 0.5 + 1.0), sem par repetido.
+    assert inter.loc[(2, 1), "hours"] == pytest.approx(3.0)
+    assert inter.loc[(2, 1), "score"] == pytest.approx(1 + 0.5 * np.log1p(3.0))
+    assert 5 not in ds.interactions["game_id"].tolist()
     assert ds.games["name"].tolist() == ["Fallout 4", "Dota 2", "Portal 2", "Sem Jogadores"]
     assert ds.users.columns.tolist() == ["user_id", "steam_real_id"]
 
@@ -137,6 +167,8 @@ def test_sparsity_de_matriz_vazia():
 def test_dataset_real_bate_com_o_planejamento():
     ds = load_dataset()
 
-    assert len(ds.interactions) == 128_804
+    # 5.155 jogos no original; 2 repetem o nome de outro e são unificados.
+    assert len(ds.games) == 5_153
+    assert ds.games["name"].is_unique
+    assert len(ds.interactions) == 128_801
     assert ds.interactions["user_id"].nunique() == 12_393
-    assert len(ds.games) == 5_155

@@ -76,30 +76,58 @@ def _read_tsv(path: Path) -> pd.DataFrame:
     return pd.read_csv(path, sep="\t")
 
 
-def clean_purchases(purchases: pd.DataFrame) -> pd.DataFrame:
-    """Padroniza colunas e remove pares (usuário, jogo) repetidos."""
+def _apply_aliases(df: pd.DataFrame, aliases: dict[int, int] | None) -> pd.DataFrame:
+    if aliases:
+        df = df.copy()
+        df[GAME_COL] = df[GAME_COL].replace(aliases)
+    return df
+
+
+def clean_purchases(purchases: pd.DataFrame, aliases: dict[int, int] | None = None) -> pd.DataFrame:
+    """Padroniza colunas, unifica IDs de jogos repetidos e remove pares repetidos."""
     df = purchases.rename(columns={"User_ID": USER_COL, "Game_ID": GAME_COL})
-    return df[[USER_COL, GAME_COL]].drop_duplicates().reset_index(drop=True)
+    df = _apply_aliases(df[[USER_COL, GAME_COL]], aliases)
+    return df.drop_duplicates().reset_index(drop=True)
 
 
-def clean_plays(plays: pd.DataFrame) -> pd.DataFrame:
-    """Padroniza colunas e soma as horas de pares repetidos.
+def clean_plays(plays: pd.DataFrame, aliases: dict[int, int] | None = None) -> pd.DataFrame:
+    """Padroniza colunas, unifica IDs de jogos repetidos e soma as horas de pares repetidos.
 
     No dataset os pares repetidos são registros separados de sessão do mesmo jogo,
     por isso as horas são somadas. Horas negativas ou ausentes viram 0.
     """
     df = plays.rename(columns={"User_ID": USER_COL, "Game_ID": GAME_COL, "Hours": HOURS_COL})
+    df = _apply_aliases(df, aliases)
     df[HOURS_COL] = pd.to_numeric(df[HOURS_COL], errors="coerce").fillna(0.0).clip(lower=0.0)
     return df.groupby([USER_COL, GAME_COL], as_index=False)[HOURS_COL].sum()
 
 
-def clean_games(games: pd.DataFrame) -> pd.DataFrame:
-    """Padroniza colunas do catálogo, remove espaços extras e adiciona ``tags`` vazias."""
+def _standardize_games(games: pd.DataFrame) -> pd.DataFrame:
     df = games.rename(columns={"Game_ID": GAME_COL, "Game Name": NAME_COL})
     df = df[[GAME_COL, NAME_COL]].drop_duplicates(GAME_COL).copy()
     df[NAME_COL] = df[NAME_COL].astype(str).str.strip()
-    df[TAGS_COL] = [[] for _ in range(len(df))]
     return df.sort_values(GAME_COL).reset_index(drop=True)
+
+
+def game_id_aliases(games: pd.DataFrame) -> dict[int, int]:
+    """Mapeia IDs de jogos com nome repetido (após tirar espaços) para o menor ID.
+
+    O catálogo original tem títulos que só diferem por um espaço no fim
+    (ex.: ``"Universe Sandbox"`` e ``"Universe Sandbox "``); eles são o mesmo jogo.
+    """
+    df = _standardize_games(games)
+    canonical = df.groupby(NAME_COL)[GAME_COL].transform("min")
+    repeated = canonical != df[GAME_COL]
+    return {
+        int(g): int(c) for g, c in zip(df.loc[repeated, GAME_COL], canonical[repeated], strict=True)
+    }
+
+
+def clean_games(games: pd.DataFrame) -> pd.DataFrame:
+    """Padroniza o catálogo: tira espaços dos nomes, mantém um ID por nome e cria ``tags``."""
+    df = _standardize_games(games).drop_duplicates(NAME_COL).reset_index(drop=True)
+    df[TAGS_COL] = [[] for _ in range(len(df))]
+    return df
 
 
 def clean_users(users: pd.DataFrame) -> pd.DataFrame:
@@ -143,11 +171,13 @@ def load_dataset(data_dir: str | Path = DEFAULT_DATA_DIR, alpha: float = DEFAULT
             "Rode scripts/download_data.sh primeiro."
         )
 
-    purchases = clean_purchases(_read_tsv(data_dir / PURCHASE_FILE))
-    plays = clean_plays(_read_tsv(data_dir / PLAY_FILE))
+    raw_games = _read_tsv(data_dir / GAMES_FILE)
+    aliases = game_id_aliases(raw_games)
+    purchases = clean_purchases(_read_tsv(data_dir / PURCHASE_FILE), aliases)
+    plays = clean_plays(_read_tsv(data_dir / PLAY_FILE), aliases)
     return Dataset(
         interactions=build_interactions(purchases, plays, alpha),
-        games=clean_games(_read_tsv(data_dir / GAMES_FILE)),
+        games=clean_games(raw_games),
         users=clean_users(_read_tsv(data_dir / USERS_FILE)),
     )
 
