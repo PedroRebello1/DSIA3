@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from app.api.routes import games, health, users
+from app.api.routes import games, health, preferences, users
 from app.core.config import get_settings
 from app.core.errors import register_error_handlers
 
@@ -30,6 +30,7 @@ def create_app() -> FastAPI:
     register_error_handlers(application)
     application.include_router(health.router)
     application.include_router(users.router)
+    application.include_router(preferences.router)
     application.include_router(games.router)
     return application
 

@@ -7,8 +7,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from app.schemas.interaction import InteractionIn, InteractionOut
 
 
-def ensure_unique_games(items: list[InteractionIn]) -> list[InteractionIn]:
-    """Rejeita listas com o mesmo jogo repetido."""
+def ensure_unique_games[T: BaseModel](items: list[T]) -> list[T]:
+    """Rejeita listas com o mesmo jogo (``game_id``) repetido."""
     ids = [item.game_id for item in items]
     repeated = sorted({g for g in ids if ids.count(g) > 1})
     if repeated:
