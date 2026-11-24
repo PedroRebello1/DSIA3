@@ -26,8 +26,8 @@ logs: ## Acompanha os logs da API
 seed: ## Baixa o dataset, aplica as migrações e popula o banco
 	$(COMPOSE) run --rm api sh -c "alembic upgrade head && sh scripts/download_data.sh && python scripts/seed_db.py"
 
-test: ## Roda os testes
-	$(BIN)/python -m pytest
+test: ## Roda os testes com relatório de cobertura
+	$(BIN)/python -m pytest --cov --cov-report=term
 
 lint: ## Verifica estilo e formatação (ruff)
 	$(BIN)/ruff check .
