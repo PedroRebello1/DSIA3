@@ -4,7 +4,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Query
 
-from app.api.deps import DbSession, Recommender
+from app.api.deps import DbSession, Recommender, UserId
 from app.core.config import get_settings
 from app.schemas.error import error_responses
 from app.schemas.recommendation import RecommendationsOut
@@ -18,7 +18,14 @@ K = Annotated[int | None, Query(ge=1, le=100, description="Quantos jogos recomen
     "/users/{user_id}/recommendations",
     response_model=RecommendationsOut,
     responses=error_responses(404, 422),
+    summary="Recomenda jogos para um usuário",
 )
-def recommend(user_id: int, db: DbSession, service: Recommender, k: K = None) -> RecommendationsOut:
-    """Top-k jogos para o usuário, sem os que ele já tem ou marcou como "não gostei"."""
+def recommend(
+    user_id: UserId, db: DbSession, service: Recommender, k: K = None
+) -> RecommendationsOut:
+    """Top-k jogos para o usuário, ordenados pelo score do modelo.
+
+    Jogos que o usuário já tem ou marcou como "não gostei" ficam de fora. Se `k` não
+    for informado, usa o padrão da configuração (`DEFAULT_K`).
+    """
     return service.recommend(db, user_id, k or get_settings().default_k)

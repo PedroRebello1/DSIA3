@@ -30,12 +30,12 @@ class UserOut(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-    id: int
-    steam_real_id: int | None
-    created_at: datetime
+    id: int = Field(description="ID do usuário.")
+    steam_real_id: int | None = Field(description="ID original da Steam (nulo se criado pela API).")
+    created_at: datetime = Field(description="Data de cadastro.")
 
 
 class UserDetail(UserOut):
     """Usuário com o histórico de jogos."""
 
-    history: list[InteractionOut]
+    history: list[InteractionOut] = Field(description="Jogos do usuário, por ID.")

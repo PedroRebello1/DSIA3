@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from app.api.openapi import DESCRIPTION, TAGS
 from app.api.routes import games, health, preferences, recommendations, users
 from app.core.config import get_settings
 from app.core.errors import register_error_handlers
@@ -28,7 +29,8 @@ def create_app() -> FastAPI:
     application = FastAPI(
         title=settings.app_name,
         version=settings.app_version,
-        description="API de recomendação de jogos da Steam.",
+        description=DESCRIPTION,
+        openapi_tags=TAGS,
         lifespan=lifespan,
     )
     register_error_handlers(application)

@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-from fastapi import Depends, Query, Request
+from fastapi import Depends, Path, Query, Request
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -11,6 +11,8 @@ from app.services.recommender_service import RecommenderService
 DbSession = Annotated[Session, Depends(get_db)]
 Limit = Annotated[int, Query(ge=1, le=100, description="Máximo de itens na resposta.")]
 Offset = Annotated[int, Query(ge=0, description="Quantos itens pular (paginação).")]
+UserId = Annotated[int, Path(description="ID do usuário.")]
+GameId = Annotated[int, Path(description="ID do jogo.")]
 
 
 def get_recommender_service(request: Request, db: DbSession) -> RecommenderService:

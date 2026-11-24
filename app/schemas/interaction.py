@@ -19,9 +19,9 @@ class InteractionIn(BaseModel):
 class InteractionOut(BaseModel):
     """Jogo do histórico, com o nome para facilitar a leitura."""
 
-    game_id: int
-    name: str
-    purchased: bool
-    hours: float
-    disliked: bool
-    updated_at: datetime
+    game_id: int = Field(description="ID do jogo.")
+    name: str = Field(description="Nome do jogo.")
+    purchased: bool = Field(description="Se o usuário comprou o jogo.")
+    hours: float = Field(description="Horas jogadas.")
+    disliked: bool = Field(description='Marcado como "não gostei".')
+    updated_at: datetime = Field(description="Última alteração.")

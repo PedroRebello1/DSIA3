@@ -25,7 +25,7 @@ class GameOut(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-    id: int
-    name: str
-    tags: list[str]
-    created_at: datetime
+    id: int = Field(description="ID do jogo.")
+    name: str = Field(description="Nome do jogo.")
+    tags: list[str] = Field(description="Gêneros ou palavras-chave (pode ser vazio).")
+    created_at: datetime = Field(description="Data de cadastro.")
