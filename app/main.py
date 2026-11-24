@@ -5,8 +5,9 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from app.api.routes import health
+from app.api.routes import games, health, users
 from app.core.config import get_settings
+from app.core.errors import register_error_handlers
 
 
 @asynccontextmanager
@@ -26,7 +27,10 @@ def create_app() -> FastAPI:
         description="API de recomendação de jogos da Steam.",
         lifespan=lifespan,
     )
+    register_error_handlers(application)
     application.include_router(health.router)
+    application.include_router(users.router)
+    application.include_router(games.router)
     return application
 
 
