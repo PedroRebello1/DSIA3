@@ -8,9 +8,10 @@ router = APIRouter(tags=["health"])
 @router.get("/health", summary="Status da API")
 def health(request: Request) -> dict:
     """Indica se a API está no ar e se há um modelo carregado em memória."""
-    model = getattr(request.app.state, "model", None)
+    service = getattr(request.app.state, "recommender", None)
     return {
         "status": "ok",
         "version": request.app.version,
-        "model_loaded": model is not None,
+        "model_loaded": service is not None,
+        "model_version": service.version if service else None,
     }
