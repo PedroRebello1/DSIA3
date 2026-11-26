@@ -19,6 +19,7 @@ from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.core.config import get_settings
 from app.db.models import Base
 from app.db.session import get_db
 from app.main import create_app
@@ -61,6 +62,16 @@ def make_synthetic_dataset(alpha: float = 1.0) -> Dataset:
         }
     )
     return Dataset(interactions=interactions, games=games, users=users)
+
+
+@pytest.fixture(autouse=True)
+def isolated_artifacts(tmp_path, monkeypatch) -> Iterator:
+    """Cada teste usa uma pasta de artefatos vazia, nunca o ``artifacts/`` da máquina."""
+    artifacts = tmp_path / "artifacts"
+    monkeypatch.setenv("ARTIFACTS_DIR", str(artifacts))
+    get_settings.cache_clear()
+    yield artifacts
+    get_settings.cache_clear()
 
 
 @pytest.fixture
