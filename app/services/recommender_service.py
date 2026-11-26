@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from pathlib import Path
 
 import pandas as pd
 from sqlalchemy import select
@@ -21,6 +22,7 @@ from app.services.users import require_user
 from recsys.base import Recommender
 from recsys.data import DEFAULT_ALPHA, confidence_score
 from recsys.models.content import ContentRecommender
+from recsys.models.hybrid import HybridRecommender
 from recsys.models.popularity import PopularityRecommender
 
 
@@ -97,6 +99,15 @@ class RecommenderService:
             similar.fit(None, games)
         version = datetime.now(UTC).isoformat(timespec="seconds")
         return cls(model, "popular", version, alpha=alpha, similar_model=similar)
+
+    @classmethod
+    def from_artifact(cls, path: str | Path) -> RecommenderService:
+        """Carrega o híbrido gravado por ``recsys.train`` (versão = data do treino)."""
+        model = HybridRecommender.load(str(path))
+        metadata = getattr(model, "metadata_", {}) or {}
+        version = metadata.get("trained_at") or datetime.now(UTC).isoformat(timespec="seconds")
+        alpha = float(metadata.get("params", {}).get("alpha", DEFAULT_ALPHA))
+        return cls(model, "hybrid", version, alpha=alpha)
 
     def recommend(self, db: Session, user_id: int, k: int) -> RecommendationsOut:
         """Recomenda ``k`` jogos, sem repetir os que já estão no histórico do usuário."""
