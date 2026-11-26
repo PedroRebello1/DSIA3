@@ -6,6 +6,7 @@ a partir do banco, chama o modelo e devolve a resposta com os nomes dos jogos.
 
 from __future__ import annotations
 
+import threading
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -103,6 +104,7 @@ class RecommenderService:
         self.version = version
         self.alpha = alpha
         self.similar_model = similar_model if similar_model is not None else model
+        self._lock = threading.Lock()
 
     @property
     def strategies(self) -> dict[Strategy, Recommender]:
@@ -175,6 +177,12 @@ class RecommenderService:
             model_version=self.version,
             recommendations=to_items(db, recs),
         )
+
+    def add_game(self, game_id: int, name: str, tags: list[str] | None = None) -> None:
+        """Avisa os modelos sobre um jogo novo (o conteúdo já pode recomendá-lo)."""
+        with self._lock:
+            for model in {id(m): m for m in (self.model, self.similar_model)}.values():
+                model.add_game(game_id, name, tags)
 
     def similar_games(self, db: Session, game_id: int, k: int) -> SimilarGamesOut:
         """Jogos parecidos com ``game_id`` (404 se o jogo não existir)."""

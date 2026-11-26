@@ -25,3 +25,11 @@ class ModelInfoOut(BaseModel):
     strategy: str | None = Field(description="Estratégia padrão do modelo carregado.")
     version: str | None = Field(description="Versão (data do treino) do modelo carregado.")
     last_run: ModelRunOut | None = Field(description="Último treino registrado no banco.")
+    retraining: bool = Field(False, description="Se há um retreino em andamento.")
+
+
+class RetrainOut(BaseModel):
+    """Confirmação de que o retreino começou."""
+
+    status: str = Field(description="Sempre 'started'.")
+    message: str = Field(description="Como acompanhar o retreino.")

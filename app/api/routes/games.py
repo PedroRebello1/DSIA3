@@ -4,7 +4,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Query, status
 
-from app.api.deps import DbSession, GameId, K, Limit, Offset, Recommender
+from app.api.deps import DbSession, GameId, K, Limit, LoadedRecommender, Offset, Recommender
 from app.core.config import get_settings
 from app.schemas.error import error_responses
 from app.schemas.game import GameCreate, GameOut
@@ -23,13 +23,17 @@ Search = Annotated[str | None, Query(max_length=100, description="Trecho do nome
     responses=error_responses(409, 422),
     summary="Cadastra um jogo",
 )
-def create_game(data: GameCreate, db: DbSession) -> GameOut:
+def create_game(data: GameCreate, db: DbSession, model: LoadedRecommender) -> GameOut:
     """Cadastra um jogo no catálogo.
 
     O nome é único sem diferenciar maiúsculas (409 se já existir). As `tags` são
-    opcionais e ajudam o modelo de conteúdo a encontrar jogos parecidos.
+    opcionais e ajudam o modelo de conteúdo a encontrar jogos parecidos. O jogo já entra
+    no modelo em memória: aparece em `/similar` e pode ser recomendado sem retreino.
     """
-    return service.create_game(db, data)
+    game = service.create_game(db, data)
+    if model is not None:
+        model.add_game(game.id, game.name, game.tags)
+    return game
 
 
 @router.get(
