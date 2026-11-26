@@ -1,17 +1,13 @@
 """Rota de recomendações."""
 
-from typing import Annotated
+from fastapi import APIRouter
 
-from fastapi import APIRouter, Query
-
-from app.api.deps import DbSession, Recommender, UserId
+from app.api.deps import DbSession, K, Recommender, UserId
 from app.core.config import get_settings
 from app.schemas.error import error_responses
 from app.schemas.recommendation import RecommendationsOut
 
 router = APIRouter(tags=["recommendations"])
-
-K = Annotated[int | None, Query(ge=1, le=100, description="Quantos jogos recomendar.")]
 
 
 @router.get(

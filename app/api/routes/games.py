@@ -4,9 +4,11 @@ from typing import Annotated
 
 from fastapi import APIRouter, Query, status
 
-from app.api.deps import DbSession, GameId, Limit, Offset
+from app.api.deps import DbSession, GameId, K, Limit, Offset, Recommender
+from app.core.config import get_settings
 from app.schemas.error import error_responses
 from app.schemas.game import GameCreate, GameOut
+from app.schemas.recommendation import SimilarGamesOut
 from app.services import games as service
 
 router = APIRouter(prefix="/games", tags=["games"])
@@ -49,3 +51,16 @@ def list_games(
 def get_game(game_id: GameId, db: DbSession) -> GameOut:
     """Detalhe de um jogo."""
     return service.get_game(db, game_id)
+
+
+@router.get(
+    "/{game_id}/similar",
+    response_model=SimilarGamesOut,
+    responses=error_responses(404, 422),
+    summary="Lista jogos parecidos",
+)
+def similar_games(
+    game_id: GameId, db: DbSession, model: Recommender, k: K = None
+) -> SimilarGamesOut:
+    """Jogos parecidos com o informado, pelo título e pelas tags (modelo de conteúdo)."""
+    return model.similar_games(db, game_id, k or get_settings().default_k)

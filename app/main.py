@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.api.openapi import DESCRIPTION, TAGS
-from app.api.routes import games, health, preferences, recommendations, users
+from app.api.routes import games, health, model, preferences, recommendations, users
 from app.core.config import get_settings
 from app.core.errors import register_error_handlers
 
@@ -39,6 +39,7 @@ def create_app() -> FastAPI:
     application.include_router(preferences.router)
     application.include_router(recommendations.router)
     application.include_router(games.router)
+    application.include_router(model.router)
     return application
 
 

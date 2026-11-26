@@ -13,6 +13,7 @@ Limit = Annotated[int, Query(ge=1, le=100, description="Máximo de itens na resp
 Offset = Annotated[int, Query(ge=0, description="Quantos itens pular (paginação).")]
 UserId = Annotated[int, Path(description="ID do usuário.")]
 GameId = Annotated[int, Path(description="ID do jogo.")]
+K = Annotated[int | None, Query(ge=1, le=100, description="Quantos jogos retornar.")]
 
 
 def get_recommender_service(request: Request, db: DbSession) -> RecommenderService:
@@ -25,3 +26,11 @@ def get_recommender_service(request: Request, db: DbSession) -> RecommenderServi
 
 
 Recommender = Annotated[RecommenderService, Depends(get_recommender_service)]
+
+
+def get_loaded_recommender(request: Request) -> RecommenderService | None:
+    """Serviço de recomendação já carregado, sem treinar um novo."""
+    return getattr(request.app.state, "recommender", None)
+
+
+LoadedRecommender = Annotated[RecommenderService | None, Depends(get_loaded_recommender)]

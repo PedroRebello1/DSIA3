@@ -8,7 +8,7 @@ from collections.abc import Iterable
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session, joinedload
 
-from app.db.models import Game, Interaction, User
+from app.db.models import Game, Interaction, ModelRun, User
 
 # ---- Usuários ----
 
@@ -110,3 +110,11 @@ def delete_interactions(db: Session, user_id: int, game_ids: Iterable[int] | Non
     result = db.execute(stmt)
     db.expire_all()
     return result.rowcount
+
+
+# ---- Treinos do modelo ----
+
+
+def get_latest_model_run(db: Session) -> ModelRun | None:
+    """Treino mais recente registrado em ``model_runs``."""
+    return db.scalar(select(ModelRun).order_by(ModelRun.trained_at.desc(), ModelRun.id.desc()))

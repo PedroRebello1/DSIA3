@@ -15,10 +15,12 @@ from sqlalchemy.orm import Session
 
 from app.db import crud
 from app.db.models import Game, Interaction
-from app.schemas.recommendation import RecommendationsOut, RecommendedGame
+from app.schemas.recommendation import RecommendationsOut, RecommendedGame, SimilarGamesOut
+from app.services.games import get_game
 from app.services.users import require_user
 from recsys.base import Recommender
 from recsys.data import DEFAULT_ALPHA, confidence_score
+from recsys.models.content import ContentRecommender
 from recsys.models.popularity import PopularityRecommender
 
 
@@ -63,24 +65,38 @@ def load_training_data(
 
 
 class RecommenderService:
-    """Guarda o modelo em memória e atende os pedidos de recomendação."""
+    """Guarda o modelo em memória e atende os pedidos de recomendação.
+
+    ``similar_model`` responde ``/games/{id}/similar``; por padrão é o próprio ``model``.
+    """
 
     def __init__(
-        self, model: Recommender, strategy: str, version: str, alpha: float = DEFAULT_ALPHA
+        self,
+        model: Recommender,
+        strategy: str,
+        version: str,
+        alpha: float = DEFAULT_ALPHA,
+        similar_model: Recommender | None = None,
     ) -> None:
         self.model = model
         self.strategy = strategy
         self.version = version
         self.alpha = alpha
+        self.similar_model = similar_model if similar_model is not None else model
 
     @classmethod
     def from_db(cls, db: Session, alpha: float = DEFAULT_ALPHA) -> RecommenderService:
-        """Treina o ``PopularityRecommender`` com os dados atuais do banco."""
+        """Treina, com os dados atuais do banco, popularidade (recomendações) e conteúdo
+        (jogos similares)."""
         interactions, games = load_training_data(db, alpha)
         model = PopularityRecommender()
         model.fit(interactions, games)
+        similar = None
+        if not games.empty:
+            similar = ContentRecommender()
+            similar.fit(None, games)
         version = datetime.now(UTC).isoformat(timespec="seconds")
-        return cls(model, strategy="popular", version=version, alpha=alpha)
+        return cls(model, "popular", version, alpha=alpha, similar_model=similar)
 
     def recommend(self, db: Session, user_id: int, k: int) -> RecommendationsOut:
         """Recomenda ``k`` jogos, sem repetir os que já estão no histórico do usuário."""
@@ -101,3 +117,15 @@ class RecommenderService:
             model_version=self.version,
             recommendations=items,
         )
+
+    def similar_games(self, db: Session, game_id: int, k: int) -> SimilarGamesOut:
+        """Jogos parecidos com ``game_id`` (404 se o jogo não existir)."""
+        game = get_game(db, game_id)
+        recs = self.similar_model.similar_games(game_id, k=k)
+        games = crud.get_games_by_ids(db, [r.game_id for r in recs])
+        items = [
+            RecommendedGame(game_id=r.game_id, name=games[r.game_id].name, score=r.score)
+            for r in recs
+            if r.game_id in games
+        ]
+        return SimilarGamesOut(game_id=game.id, name=game.name, similar=items)

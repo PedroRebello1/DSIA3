@@ -18,3 +18,11 @@ class RecommendationsOut(BaseModel):
     strategy: str = Field(description="Estratégia usada para gerar a lista.")
     model_version: str = Field(description="Data/hora em que o modelo foi treinado.")
     recommendations: list[RecommendedGame] = Field(description="Jogos, do mais indicado ao menos.")
+
+
+class SimilarGamesOut(BaseModel):
+    """Jogos parecidos com um jogo de referência."""
+
+    game_id: int = Field(description="ID do jogo de referência.")
+    name: str = Field(description="Nome do jogo de referência.")
+    similar: list[RecommendedGame] = Field(description="Jogos parecidos, do mais ao menos.")

@@ -39,5 +39,9 @@ TAGS = [
             '"não gostei" nunca são recomendados.'
         ),
     },
-    {"name": "games", "description": "Catálogo de jogos: cadastro, busca e detalhe."},
+    {
+        "name": "games",
+        "description": "Catálogo de jogos: cadastro, busca, detalhe e jogos parecidos.",
+    },
+    {"name": "model", "description": "Versão do modelo em uso e métricas do último treino."},
 ]
