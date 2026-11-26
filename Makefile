@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help install up down logs init seed train evaluate test lint format
+.PHONY: help install up down logs init seed train evaluate smoke test lint format
 
 PYTHON ?= python3
 VENV ?= .venv
@@ -34,6 +34,9 @@ train: ## Retreina o modelo (reinicie a API ou use POST /model/retrain)
 
 evaluate: ## Compara os modelos na avaliação offline (local)
 	$(BIN)/python -m recsys.evaluation
+
+smoke: ## Smoke test da stack em execução (depois de make up)
+	sh scripts/smoke_test.sh
 
 test: ## Roda os testes com relatório de cobertura
 	$(BIN)/python -m pytest --cov --cov-report=term
