@@ -1,6 +1,17 @@
 """Schemas das recomendações."""
 
+from enum import StrEnum
+
 from pydantic import BaseModel, Field
+
+
+class Strategy(StrEnum):
+    """Estratégias de recomendação disponíveis."""
+
+    hybrid = "hybrid"
+    cf = "cf"
+    content = "content"
+    popular = "popular"
 
 
 class RecommendedGame(BaseModel):
@@ -9,13 +20,14 @@ class RecommendedGame(BaseModel):
     game_id: int = Field(description="ID do jogo.")
     name: str = Field(description="Nome do jogo.")
     score: float = Field(description="Pontuação do modelo (maior é melhor).")
+    reason: str | None = Field(None, description="Por que o jogo foi recomendado.")
 
 
 class RecommendationsOut(BaseModel):
     """Lista de recomendações para um usuário."""
 
     user_id: int = Field(description="ID do usuário.")
-    strategy: str = Field(description="Estratégia usada para gerar a lista.")
+    strategy: Strategy = Field(description="Estratégia usada para gerar a lista.")
     model_version: str = Field(description="Data/hora em que o modelo foi treinado.")
     recommendations: list[RecommendedGame] = Field(description="Jogos, do mais indicado ao menos.")
 

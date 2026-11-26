@@ -1,5 +1,6 @@
 """Ponto de entrada da API FastAPI."""
 
+import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -9,16 +10,33 @@ from app.api.openapi import DESCRIPTION, TAGS
 from app.api.routes import games, health, model, preferences, recommendations, users
 from app.core.config import get_settings
 from app.core.errors import register_error_handlers
+from app.services.recommender_service import RecommenderService
+
+logger = logging.getLogger(__name__)
+
+
+def load_model(path) -> RecommenderService | None:
+    """Carrega o artefato do híbrido, se existir; ``None`` em caso de ausência ou erro."""
+    if not path.exists():
+        logger.warning("Modelo não encontrado em %s; usando popularidade até o retreino.", path)
+        return None
+    try:
+        service = RecommenderService.from_artifact(path)
+    except Exception:
+        logger.exception("Falha ao carregar o modelo de %s", path)
+        return None
+    logger.info("Modelo %s carregado (versão %s).", service.strategy, service.version)
+    return service
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """Prepara recursos compartilhados no startup e os libera no shutdown.
+    """Carrega o modelo híbrido no startup e o libera no shutdown.
 
-    O serviço de recomendação é criado no primeiro pedido (``get_recommender_service``),
-    quando já existe uma sessão com o banco.
+    Sem artefato, o serviço de recomendação é criado no primeiro pedido
+    (``get_recommender_service``), com popularidade calculada a partir do banco.
     """
-    app.state.recommender = None
+    app.state.recommender = load_model(get_settings().model_path)
     yield
     app.state.recommender = None
 

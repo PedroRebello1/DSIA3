@@ -24,6 +24,7 @@ HTTP_CODES = {
     405: "method_not_allowed",
     409: "conflict",
     422: "validation_error",
+    503: "model_unavailable",
 }
 
 
@@ -46,6 +47,13 @@ class NotFoundError(AppError):
 class ConflictError(AppError):
     status_code = status.HTTP_409_CONFLICT
     code = "conflict"
+
+
+class ModelUnavailableError(AppError):
+    """A estratégia pedida depende de um modelo que não está carregado."""
+
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    code = "model_unavailable"
 
 
 def error_response(
