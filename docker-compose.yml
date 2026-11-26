@@ -1,3 +1,8 @@
+x-app-env: &app-env
+  DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-steam}:${POSTGRES_PASSWORD:-steam}@db:5432/${POSTGRES_DB:-steam}
+  ARTIFACTS_DIR: /app/artifacts
+  DEFAULT_K: ${DEFAULT_K:-10}
+
 services:
   db:
     image: postgres:16-alpine
@@ -15,21 +20,34 @@ services:
       timeout: 5s
       retries: 10
 
-  api:
+  # Roda uma vez a cada "up": migrações, dataset, seed e treino (só se não houver modelo).
+  init:
     build: .
     environment:
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-steam}:${POSTGRES_PASSWORD:-steam}@db:5432/${POSTGRES_DB:-steam}
-      ARTIFACTS_DIR: /app/artifacts
-      DEFAULT_K: ${DEFAULT_K:-10}
-    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
-    ports:
-      - "${API_PORT:-8000}:8000"
+      <<: *app-env
+      FORCE_TRAIN: ${FORCE_TRAIN:-0}
+      TRAIN_ARGS: ${TRAIN_ARGS:-}
+    command: sh scripts/init.sh
     volumes:
       - data:/app/data
       - artifacts:/app/artifacts
     depends_on:
       db:
         condition: service_healthy
+    restart: "no"
+
+  api:
+    build: .
+    environment: *app-env
+    ports:
+      - "${API_PORT:-8000}:8000"
+    volumes:
+      - artifacts:/app/artifacts
+    depends_on:
+      db:
+        condition: service_healthy
+      init:
+        condition: service_completed_successfully
 
 volumes:
   pgdata:
