@@ -94,8 +94,13 @@ def test_recomendacoes_de_um_usuario(client):
     assert body["strategy"] == "popular"
     assert body["model_version"]
     assert body["recommendations"] == [
-        {"game_id": 5, "name": "Team Fortress 2", "score": 1.0},
-        {"game_id": 6, "name": "Counter-Strike", "score": 1.0},
+        {
+            "game_id": 5,
+            "name": "Team Fortress 2",
+            "score": 1.0,
+            "reason": "Popular entre jogadores",
+        },
+        {"game_id": 6, "name": "Counter-Strike", "score": 1.0, "reason": "Popular entre jogadores"},
     ]
 
 
