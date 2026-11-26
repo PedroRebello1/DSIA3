@@ -31,7 +31,7 @@ def test_normalize_scores():
 
 @pytest.mark.parametrize(
     ("size", "expected"),
-    [(0, (0, 0, 1)), (1, (0.4, 0.4, 0.2)), (2, (0.4, 0.4, 0.2)), (9, (0.7, 0.2, 0.1))],
+    [(0, (0, 0, 1)), (1, (0.3, 0.3, 0.4)), (2, (0.3, 0.3, 0.4)), (9, (0.7, 0.2, 0.1))],
 )
 def test_pesos_pelo_tamanho_do_historico(model, size, expected):
     assert model.weights_for(size) == expected

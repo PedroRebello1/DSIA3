@@ -29,19 +29,20 @@ from typing import Any
 import pandas as pd
 
 from recsys.base import SCORE_COL
-from recsys.data import DEFAULT_ALPHA, DEFAULT_DATA_DIR, confidence_score, load_dataset
+from recsys.data import DEFAULT_DATA_DIR, confidence_score, load_dataset
 from recsys.evaluation import DEFAULT_SEED, evaluate, train_test_split
 from recsys.models.hybrid import DEFAULT_WEIGHTS, HybridRecommender
 from recsys.models.item_knn import ItemKNNRecommender
 
 ARTIFACT_NAME = "model.joblib"
+# Valores ajustados na avaliação offline (python -m recsys.tuning; ver docs/modelo.md).
 DEFAULT_PARAMS: dict[str, Any] = {
-    "alpha": DEFAULT_ALPHA,
-    "k_neighbors": 50,
+    "alpha": 0.25,
+    "k_neighbors": 20,
     "weights": [[size, list(w)] for size, w in DEFAULT_WEIGHTS],
     "dislike_penalty": 0.5,
 }
-DEFAULT_GRID: dict[str, list[Any]] = {"k_neighbors": [20, 50, 100], "alpha": [DEFAULT_ALPHA]}
+DEFAULT_GRID: dict[str, list[Any]] = {"k_neighbors": [20, 50, 100]}
 
 
 @dataclass
