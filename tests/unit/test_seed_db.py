@@ -46,3 +46,24 @@ def test_seed_insere_tudo(engine, dataset):
 def test_seed_sem_tabelas():
     with pytest.raises(RuntimeError, match="alembic upgrade head"):
         seed(make_engine("sqlite://"), None)
+
+
+def test_seed_e_idempotente(engine, dataset):
+    seed(engine, dataset)
+
+    assert seed(engine, dataset) == {"users": 0, "games": 0, "interactions": 0}
+    with Session(engine) as db:
+        assert db.scalar(select(func.count()).select_from(Interaction)) == 3
+
+
+def test_seed_completa_banco_parcial_sem_sobrescrever(engine, dataset):
+    with Session(engine) as db:
+        db.add_all([User(id=1, steam_real_id=151603712), Game(id=10, name="Fallout 4")])
+        db.flush()
+        db.add(Interaction(user_id=1, game_id=10, hours=99.0, disliked=True))
+        db.commit()
+
+    assert seed(engine, dataset) == {"users": 1, "games": 1, "interactions": 2}
+    with Session(engine) as db:
+        kept = db.get(Interaction, (1, 10))
+        assert (kept.hours, kept.disliked) == (99.0, True)
