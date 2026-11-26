@@ -28,6 +28,7 @@ _DESCRIPTIONS = {
     404: "Recurso não encontrado",
     409: "Conflito com dados existentes",
     422: "Dados inválidos na requisição",
+    503: "Modelo indisponível para a estratégia pedida",
 }
 
 
