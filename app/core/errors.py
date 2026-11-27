@@ -6,7 +6,6 @@ Toda resposta de erro tem o formato::
 """
 
 import logging
-from http import HTTPStatus
 from typing import Any
 
 from fastapi import FastAPI, Request, status
@@ -31,8 +30,11 @@ HTTP_CODES = {
 
 # O Starlette e o Pydantic geram as mensagens em inglês; estas as substituem.
 HTTP_MESSAGES = {
-    404: "Rota não encontrada",
-    405: "Método HTTP não permitido nesta rota",
+    "Not Found": "Rota não encontrada",
+    "Method Not Allowed": "Método HTTP não permitido nesta rota",
+    "There was an error parsing the body": (
+        "Não foi possível ler o corpo da requisição; envie JSON válido em UTF-8"
+    ),
 }
 VALIDATION_MESSAGES = {
     "missing": "campo obrigatório",
@@ -143,11 +145,9 @@ async def validation_error_handler(request: Request, exc: RequestValidationError
 
 
 async def http_error_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
-    """Erros HTTP do framework (rota inexistente, método não permitido)."""
+    """Erros HTTP do framework (rota inexistente, método não permitido, corpo ilegível)."""
     code = HTTP_CODES.get(exc.status_code, "http_error")
-    message = str(exc.detail)
-    if message == HTTPStatus(exc.status_code).phrase:  # mensagem padrão do Starlette
-        message = HTTP_MESSAGES.get(exc.status_code, message)
+    message = HTTP_MESSAGES.get(str(exc.detail), str(exc.detail))
     response = error_response(exc.status_code, code, message)
     if exc.headers:
         response.headers.update(exc.headers)

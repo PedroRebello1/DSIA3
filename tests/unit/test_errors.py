@@ -124,3 +124,15 @@ def test_validacao_da_api_responde_em_portugues(client):
     assert response.json()["error"]["details"] == [
         {"field": "body.n", "message": "deve ser um número inteiro"}
     ]
+
+
+def test_corpo_que_nao_e_utf8_tem_mensagem_em_portugues(client):
+    body = '{"n": 1, "nome": "ação"}'.encode("latin-1")
+    response = client.post("/payload", content=body, headers={"content-type": "application/json"})
+
+    assert response.status_code == 400
+    assert response.json()["error"] == {
+        "code": "bad_request",
+        "message": "Não foi possível ler o corpo da requisição; envie JSON válido em UTF-8",
+        "details": None,
+    }
