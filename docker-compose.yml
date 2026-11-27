@@ -27,6 +27,7 @@ services:
       <<: *app-env
       FORCE_TRAIN: ${FORCE_TRAIN:-0}
       TRAIN_ARGS: ${TRAIN_ARGS:-}
+      DATASET_URL: ${DATASET_URL:-}
     command: sh scripts/init.sh
     volumes:
       - data:/app/data
