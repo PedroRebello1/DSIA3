@@ -10,6 +10,7 @@ from app.schemas.user import UserCreate, UserDetail, UserOut
 
 
 def require_user(db: Session, user_id: int) -> User:
+    """Usuário pelo ID; 404 se não existir."""
     user = crud.get_user(db, user_id)
     if user is None:
         raise NotFoundError(f"Usuário {user_id} não encontrado")
@@ -17,12 +18,14 @@ def require_user(db: Session, user_id: int) -> User:
 
 
 def require_games(db: Session, game_ids: list[int]) -> None:
+    """Garante que todos os jogos existem; 404 com a lista dos que faltam."""
     missing = crud.missing_game_ids(db, game_ids)
     if missing:
         raise NotFoundError(f"Jogos não encontrados: {sorted(missing)}")
 
 
 def to_interaction_out(interaction: Interaction) -> InteractionOut:
+    """Interação do banco no formato da resposta, com o nome do jogo."""
     return InteractionOut(
         game_id=interaction.game_id,
         name=interaction.game.name,
@@ -34,11 +37,13 @@ def to_interaction_out(interaction: Interaction) -> InteractionOut:
 
 
 def user_detail(db: Session, user: User) -> UserDetail:
+    """Usuário com o histórico completo."""
     history = [to_interaction_out(i) for i in crud.get_interactions(db, user.id)]
     return UserDetail(**UserOut.model_validate(user).model_dump(), history=history)
 
 
 def add_interactions(db: Session, user_id: int, items: list[InteractionIn]) -> None:
+    """Cria ou atualiza as interações do usuário (sem ``commit``)."""
     for item in items:
         crud.upsert_interaction(db, user_id, **item.model_dump())
 
@@ -56,8 +61,10 @@ def create_user(db: Session, data: UserCreate) -> UserDetail:
 
 
 def get_user(db: Session, user_id: int) -> UserDetail:
+    """Usuário e histórico; 404 se não existir."""
     return user_detail(db, require_user(db, user_id))
 
 
 def list_users(db: Session, limit: int, offset: int) -> list[User]:
+    """Página de usuários, por ID."""
     return crud.list_users(db, limit=limit, offset=offset)

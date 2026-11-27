@@ -24,6 +24,7 @@ _lock = threading.Lock()
 
 
 def is_retraining(app: FastAPI) -> bool:
+    """Se há um retreino em andamento."""
     return bool(getattr(app.state, "retraining", False))
 
 

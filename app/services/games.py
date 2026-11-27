@@ -24,6 +24,7 @@ def create_game(db: Session, data: GameCreate) -> Game:
 
 
 def get_game(db: Session, game_id: int) -> Game:
+    """Jogo pelo ID; 404 se não existir."""
     game = crud.get_game(db, game_id)
     if game is None:
         raise NotFoundError(f"Jogo {game_id} não encontrado")
@@ -31,4 +32,5 @@ def get_game(db: Session, game_id: int) -> Game:
 
 
 def list_games(db: Session, search: str | None, limit: int, offset: int) -> list[Game]:
+    """Página do catálogo, opcionalmente filtrada por trecho do nome."""
     return crud.list_games(db, search=search, limit=limit, offset=offset)

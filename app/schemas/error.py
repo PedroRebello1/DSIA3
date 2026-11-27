@@ -13,6 +13,8 @@ class ErrorDetail(BaseModel):
 
 
 class ErrorBody(BaseModel):
+    """Conteúdo do erro: código, mensagem e detalhes."""
+
     code: str = Field(description="Código estável do erro, ex.: 'not_found'.")
     message: str = Field(description="Mensagem legível, em português.")
     details: list[ErrorDetail] | None = None

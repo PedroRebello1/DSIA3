@@ -10,6 +10,7 @@ from app.services.recommender_service import RecommenderService
 def get_model_info(
     db: Session, service: RecommenderService | None, retraining: bool = False
 ) -> ModelInfoOut:
+    """Modelo em memória (se houver) e último treino registrado no banco."""
     run = crud.get_latest_model_run(db)
     return ModelInfoOut(
         loaded=service is not None,

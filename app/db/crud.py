@@ -14,18 +14,22 @@ from app.db.models import Game, Interaction, ModelRun, User
 
 
 def get_user(db: Session, user_id: int) -> User | None:
+    """Usuário pelo ID, ou ``None``."""
     return db.get(User, user_id)
 
 
 def get_user_by_steam_id(db: Session, steam_real_id: int) -> User | None:
+    """Usuário pelo ID original da Steam, ou ``None``."""
     return db.scalar(select(User).where(User.steam_real_id == steam_real_id))
 
 
 def list_users(db: Session, limit: int = 20, offset: int = 0) -> list[User]:
+    """Página de usuários, por ordem de ID."""
     return list(db.scalars(select(User).order_by(User.id).limit(limit).offset(offset)))
 
 
 def create_user(db: Session, steam_real_id: int | None = None) -> User:
+    """Insere um usuário e devolve-o com o ID gerado."""
     user = User(steam_real_id=steam_real_id)
     db.add(user)
     db.flush()
@@ -36,6 +40,7 @@ def create_user(db: Session, steam_real_id: int | None = None) -> User:
 
 
 def get_game(db: Session, game_id: int) -> Game | None:
+    """Jogo pelo ID, ou ``None``."""
     return db.get(Game, game_id)
 
 
@@ -55,6 +60,7 @@ def list_games(
 
 
 def create_game(db: Session, name: str, tags: list[str] | None = None) -> Game:
+    """Insere um jogo e devolve-o com o ID gerado."""
     game = Game(name=name, tags=list(tags or []))
     db.add(game)
     db.flush()
@@ -62,6 +68,7 @@ def create_game(db: Session, name: str, tags: list[str] | None = None) -> Game:
 
 
 def get_games_by_ids(db: Session, game_ids: Iterable[int]) -> dict[int, Game]:
+    """Jogos existentes entre os IDs pedidos, indexados pelo ID."""
     ids = set(game_ids)
     if not ids:
         return {}

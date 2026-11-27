@@ -112,6 +112,7 @@ def seed(engine: Engine, dataset: Dataset) -> dict[str, int]:
 
 
 def main(argv: list[str] | None = None) -> None:
+    """CLI: popula o banco de ``DATABASE_URL`` com o dataset limpo."""
     parser = argparse.ArgumentParser(description="Popula o banco com o dataset Steam.")
     parser.add_argument("--data-dir", default=str(DEFAULT_DATA_DIR), help="pasta com os .dat")
     args = parser.parse_args(argv)

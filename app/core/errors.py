@@ -72,11 +72,15 @@ class AppError(Exception):
 
 
 class NotFoundError(AppError):
+    """Recurso (usuário, jogo) inexistente: 404."""
+
     status_code = status.HTTP_404_NOT_FOUND
     code = "not_found"
 
 
 class ConflictError(AppError):
+    """Conflito com dados existentes: 409."""
+
     status_code = status.HTTP_409_CONFLICT
     code = "conflict"
 
@@ -91,11 +95,13 @@ class ModelUnavailableError(AppError):
 def error_response(
     status_code: int, code: str, message: str, details: list[ErrorDetail] | None = None
 ) -> JSONResponse:
+    """Resposta JSON com o envelope padrão de erro."""
     body = ErrorResponse(error=ErrorBody(code=code, message=message, details=details))
     return JSONResponse(status_code=status_code, content=jsonable_encoder(body))
 
 
 async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
+    """Converte os erros de domínio (``AppError``) para HTTP."""
     return error_response(exc.status_code, exc.code, exc.message)
 
 
@@ -121,6 +127,7 @@ def validation_message(error: dict[str, Any]) -> str:
 
 
 async def validation_error_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+    """422 com o campo e o problema de cada erro de validação."""
     details = [
         ErrorDetail(
             field=".".join(str(part) for part in err["loc"]), message=validation_message(err)
@@ -136,6 +143,7 @@ async def validation_error_handler(request: Request, exc: RequestValidationError
 
 
 async def http_error_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
+    """Erros HTTP do framework (rota inexistente, método não permitido)."""
     code = HTTP_CODES.get(exc.status_code, "http_error")
     message = str(exc.detail)
     if message == HTTPStatus(exc.status_code).phrase:  # mensagem padrão do Starlette
@@ -147,6 +155,7 @@ async def http_error_handler(request: Request, exc: StarletteHTTPException) -> J
 
 
 async def integrity_error_handler(request: Request, exc: IntegrityError) -> JSONResponse:
+    """Violação de restrição do banco não tratada pelos serviços: 409."""
     logger.warning("Violação de integridade não tratada: %s", exc.orig)
     return error_response(
         status.HTTP_409_CONFLICT, "conflict", "A operação conflita com dados existentes"
@@ -154,6 +163,7 @@ async def integrity_error_handler(request: Request, exc: IntegrityError) -> JSON
 
 
 async def unexpected_error_handler(request: Request, exc: Exception) -> JSONResponse:
+    """500 genérico; o detalhe vai só para o log."""
     logger.exception("Erro inesperado em %s %s", request.method, request.url.path)
     return error_response(
         status.HTTP_500_INTERNAL_SERVER_ERROR, "internal_error", "Erro interno do servidor"
