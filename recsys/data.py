@@ -62,6 +62,7 @@ class InteractionMatrix:
 
     @property
     def shape(self) -> tuple[int, int]:
+        """Dimensões da matriz: (usuários, jogos)."""
         return self.matrix.shape
 
     @property

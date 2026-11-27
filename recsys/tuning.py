@@ -137,6 +137,7 @@ def tune(
 
 
 def main(argv: list[str] | None = None) -> None:
+    """CLI: roda os experimentos de α e pesos e imprime as tabelas em Markdown."""
     parser = argparse.ArgumentParser(description="Ajusta α e pesos do híbrido.")
     parser.add_argument("--max-users", type=int, default=1500)
     parser.add_argument("--k-neighbors", type=int, default=20)

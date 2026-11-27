@@ -207,6 +207,7 @@ def register_run(engine, result: TrainingResult) -> int:
 
 
 def main(argv: list[str] | None = None, engine=None) -> TrainingResult:
+    """CLI: treina o híbrido (banco ou arquivos), grava o artefato e registra o treino."""
     parser = argparse.ArgumentParser(description="Treina o modelo híbrido.")
     parser.add_argument("--source", choices=["db", "files"], default="db")
     parser.add_argument("--data-dir", type=Path, default=DEFAULT_DATA_DIR)

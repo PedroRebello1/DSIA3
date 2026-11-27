@@ -246,6 +246,7 @@ def default_models() -> dict[str, Recommender]:
 
 
 def main(argv: list[str] | None = None) -> None:
+    """CLI: compara M0 a M3 com os parâmetros iniciais e imprime a tabela em Markdown."""
     parser = argparse.ArgumentParser(description="Compara os recomendadores (avaliação offline).")
     parser.add_argument("--data-dir", type=Path, default=DEFAULT_DATA_DIR)
     parser.add_argument("--k", type=int, default=10)

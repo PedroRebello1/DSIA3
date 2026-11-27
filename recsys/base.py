@@ -41,7 +41,9 @@ class Recommendation:
 class Recommender(Protocol):
     """Interface que a API usa para conversar com qualquer modelo."""
 
-    def fit(self, interactions: pd.DataFrame, games: pd.DataFrame) -> None: ...
+    def fit(self, interactions: pd.DataFrame, games: pd.DataFrame) -> None:
+        """Treina com as interações (``user_id``, ``game_id``, ``score``) e o catálogo."""
+        ...
 
     def recommend(
         self,
@@ -49,16 +51,30 @@ class Recommender(Protocol):
         k: int = 10,
         exclude: set[int] | None = None,
         disliked: set[int] | None = None,
-    ) -> list[Recommendation]: ...
+    ) -> list[Recommendation]:
+        """Até ``k`` jogos para o histórico ``{game_id: score}``, do melhor para o pior.
 
-    def similar_games(self, game_id: int, k: int = 10) -> list[Recommendation]: ...
+        Jogos em ``exclude`` ou ``disliked`` nunca aparecem; o histórico só é excluído se
+        vier em ``exclude``.
+        """
+        ...
 
-    def add_game(self, game_id: int, name: str, tags: list[str] | None = None) -> None: ...
+    def similar_games(self, game_id: int, k: int = 10) -> list[Recommendation]:
+        """Até ``k`` jogos parecidos com ``game_id`` (lista vazia se o jogo for desconhecido)."""
+        ...
 
-    def save(self, path: str) -> None: ...
+    def add_game(self, game_id: int, name: str, tags: list[str] | None = None) -> None:
+        """Inclui um jogo cadastrado depois do treino, sem retreinar."""
+        ...
+
+    def save(self, path: str) -> None:
+        """Grava o modelo treinado em ``path``."""
+        ...
 
     @classmethod
-    def load(cls, path: str) -> Recommender: ...
+    def load(cls, path: str) -> Recommender:
+        """Carrega um modelo gravado com ``save``."""
+        ...
 
 
 class BaseRecommender:
