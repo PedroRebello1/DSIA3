@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help install up down logs init seed train evaluate smoke test lint format
+.PHONY: help install up run down logs init seed train evaluate smoke test lint format
 
 PYTHON ?= python3
 VENV ?= .venv
@@ -10,12 +10,13 @@ help: ## Lista os comandos disponíveis
 	@grep -E '^[a-z]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  %-10s %s\n", $$1, $$2}'
 
 install: ## Cria o virtualenv e instala as dependências de desenvolvimento
-	$(PYTHON) -m venv $(VENV)
-	$(BIN)/pip install --upgrade pip
-	$(BIN)/pip install -r requirements-dev.txt
+	PYTHON=$(PYTHON) VENV=$(VENV) sh scripts/install.sh
 
 up: ## Sobe banco, init (seed + treino) e API (http://localhost:8000/docs)
-	$(COMPOSE) up -d --build
+	sh scripts/run.sh docker
+
+run: ## Sobe a API sem Docker (SQLite em steam.db, se não houver DATABASE_URL)
+	VENV=$(VENV) sh scripts/run.sh local
 
 down: ## Derruba os containers (mantém os volumes)
 	$(COMPOSE) down
