@@ -6,6 +6,8 @@ Toda resposta de erro tem o formato::
 """
 
 import logging
+from http import HTTPStatus
+from typing import Any
 
 from fastapi import FastAPI, Request, status
 from fastapi.encoders import jsonable_encoder
@@ -25,6 +27,36 @@ HTTP_CODES = {
     409: "conflict",
     422: "validation_error",
     503: "model_unavailable",
+}
+
+# O Starlette e o Pydantic geram as mensagens em inglês; estas as substituem.
+HTTP_MESSAGES = {
+    404: "Rota não encontrada",
+    405: "Método HTTP não permitido nesta rota",
+}
+VALIDATION_MESSAGES = {
+    "missing": "campo obrigatório",
+    "greater_than": "deve ser maior que {gt}",
+    "greater_than_equal": "deve ser maior ou igual a {ge}",
+    "less_than": "deve ser menor que {lt}",
+    "less_than_equal": "deve ser menor ou igual a {le}",
+    "string_too_short": "deve ter pelo menos {min_length} caractere(s)",
+    "string_too_long": "deve ter no máximo {max_length} caracteres",
+    "too_short": "deve ter pelo menos {min_length} item(ns)",
+    "too_long": "deve ter no máximo {max_length} itens",
+    "int_parsing": "deve ser um número inteiro",
+    "int_type": "deve ser um número inteiro",
+    "int_from_float": "deve ser um número inteiro",
+    "float_parsing": "deve ser um número",
+    "float_type": "deve ser um número",
+    "bool_parsing": "deve ser true ou false",
+    "bool_type": "deve ser true ou false",
+    "string_type": "deve ser um texto",
+    "list_type": "deve ser uma lista",
+    "dict_type": "deve ser um objeto JSON",
+    "model_attributes_type": "deve ser um objeto JSON",
+    "json_invalid": "JSON inválido",
+    "enum": "deve ser um destes valores: {expected}",
 }
 
 
@@ -67,9 +99,32 @@ async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
     return error_response(exc.status_code, exc.code, exc.message)
 
 
+def _format_ctx(value: Any) -> str:
+    """Valor de contexto legível: ``0.0`` vira ``0`` e "a or b" vira "a ou b"."""
+    if isinstance(value, float) and value.is_integer():
+        return str(int(value))
+    return str(value).replace(" or ", " ou ")
+
+
+def validation_message(error: dict[str, Any]) -> str:
+    """Mensagem em português de um erro do Pydantic (a original, se o tipo não for conhecido)."""
+    if error["type"] == "value_error":  # mensagens dos nossos validadores, já em português
+        return error["msg"].removeprefix("Value error, ")
+    template = VALIDATION_MESSAGES.get(error["type"])
+    if template is None:
+        return error["msg"]
+    ctx = {key: _format_ctx(value) for key, value in error.get("ctx", {}).items()}
+    try:
+        return template.format(**ctx)
+    except KeyError:
+        return error["msg"]
+
+
 async def validation_error_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
     details = [
-        ErrorDetail(field=".".join(str(part) for part in err["loc"]), message=err["msg"])
+        ErrorDetail(
+            field=".".join(str(part) for part in err["loc"]), message=validation_message(err)
+        )
         for err in exc.errors()
     ]
     return error_response(
@@ -82,7 +137,10 @@ async def validation_error_handler(request: Request, exc: RequestValidationError
 
 async def http_error_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
     code = HTTP_CODES.get(exc.status_code, "http_error")
-    response = error_response(exc.status_code, code, str(exc.detail))
+    message = str(exc.detail)
+    if message == HTTPStatus(exc.status_code).phrase:  # mensagem padrão do Starlette
+        message = HTTP_MESSAGES.get(exc.status_code, message)
+    response = error_response(exc.status_code, code, message)
     if exc.headers:
         response.headers.update(exc.headers)
     return response

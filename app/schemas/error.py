@@ -38,7 +38,7 @@ _EXAMPLES: dict[int, tuple[str, str, list[dict[str, str]] | None]] = {
     422: (
         "validation_error",
         "Dados inválidos na requisição",
-        [{"field": "body.games.0.hours", "message": "Input should be greater than or equal to 0"}],
+        [{"field": "body.games.0.hours", "message": "deve ser maior ou igual a 0"}],
     ),
     503: (
         "model_unavailable",

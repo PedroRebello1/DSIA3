@@ -4,7 +4,12 @@ from fastapi.testclient import TestClient
 from pydantic import BaseModel, Field
 from sqlalchemy.exc import IntegrityError
 
-from app.core.errors import ConflictError, NotFoundError, register_error_handlers
+from app.core.errors import (
+    ConflictError,
+    NotFoundError,
+    register_error_handlers,
+    validation_message,
+)
 from app.schemas.error import error_responses
 
 
@@ -47,7 +52,7 @@ def client():
         ("/conflict", 409, "conflict", "Já existe"),
         ("/integrity", 409, "conflict", "A operação conflita com dados existentes"),
         ("/boom", 500, "internal_error", "Erro interno do servidor"),
-        ("/rota-inexistente", 404, "not_found", "Not Found"),
+        ("/rota-inexistente", 404, "not_found", "Rota não encontrada"),
     ],
 )
 def test_erros_no_formato_padrao(client, path, status, code, message):
@@ -64,7 +69,7 @@ def test_erro_de_validacao_lista_os_campos(client):
     error = response.json()["error"]
     assert error["code"] == "validation_error"
     assert error["details"][0]["field"] == "body.n"
-    assert "greater than or equal to 0" in error["details"][0]["message"]
+    assert error["details"][0]["message"] == "deve ser maior ou igual a 0"
 
 
 def test_metodo_nao_permitido(client):
@@ -72,6 +77,7 @@ def test_metodo_nao_permitido(client):
 
     assert response.status_code == 405
     assert response.json()["error"]["code"] == "method_not_allowed"
+    assert response.json()["error"]["message"] == "Método HTTP não permitido nesta rota"
     assert "GET" in response.headers["allow"]
 
 
@@ -81,3 +87,40 @@ def test_error_responses_documenta_o_envelope():
     assert set(docs) == {404, 422}
     assert docs[404]["description"] == "Recurso não encontrado"
     assert docs[422]["model"].__name__ == "ErrorResponse"
+
+
+@pytest.mark.parametrize(
+    ("error", "message"),
+    [
+        ({"type": "missing", "msg": "Field required"}, "campo obrigatório"),
+        (
+            {"type": "greater_than", "msg": "Input should be greater than 0", "ctx": {"gt": 0}},
+            "deve ser maior que 0",
+        ),
+        (
+            {"type": "string_too_long", "msg": "...", "ctx": {"max_length": 255}},
+            "deve ter no máximo 255 caracteres",
+        ),
+        (
+            {"type": "enum", "msg": "...", "ctx": {"expected": "'hybrid', 'cf' or 'popular'"}},
+            "deve ser um destes valores: 'hybrid', 'cf' ou 'popular'",
+        ),
+        (
+            {"type": "less_than_equal", "msg": "...", "ctx": {"le": 100000.0}},
+            "deve ser menor ou igual a 100000",
+        ),
+        ({"type": "value_error", "msg": "Value error, jogos repetidos"}, "jogos repetidos"),
+        ({"type": "tipo_desconhecido", "msg": "Original message"}, "Original message"),
+        ({"type": "greater_than", "msg": "Sem contexto"}, "Sem contexto"),
+    ],
+)
+def test_mensagens_de_validacao_em_portugues(error, message):
+    assert validation_message(error) == message
+
+
+def test_validacao_da_api_responde_em_portugues(client):
+    response = client.post("/payload", json={"n": "abc"})
+
+    assert response.json()["error"]["details"] == [
+        {"field": "body.n", "message": "deve ser um número inteiro"}
+    ]
