@@ -1,16 +1,25 @@
 # Steam RecSys
 
 API que recomenda jogos da Steam com base no que cada usuário comprou e em quanto tempo
-jogou. O modelo é **híbrido**: filtragem colaborativa item a item, similaridade de conteúdo
-dos títulos e popularidade, com pesos que dependem do tamanho do histórico do usuário.
+jogou. Permite cadastrar usuários e jogos, atualizar preferências (compra, horas jogadas e
+"não gostei") e obter recomendações personalizadas. O modelo é **híbrido**: filtragem
+colaborativa item a item, similaridade de conteúdo dos títulos e popularidade, com pesos
+que dependem do tamanho do histórico do usuário. A documentação interativa (Swagger UI)
+fica em `/docs`, com exemplos em todos os endpoints.
 
-- Cadastro de usuários e jogos, atualização de preferências (compra, horas jogadas e
-  "não gostei") e recomendações personalizadas.
-- Cada recomendação vem com o motivo: *"Porque você jogou Fallout 4"*.
-- Usuários novos recebem os jogos mais populares; jogos cadastrados pela API já podem ser
-  recomendados, sem retreino.
-- Estratégia selecionável (`hybrid`, `cf`, `content`, `popular`) e retreino em segundo plano.
-- Documentação interativa (Swagger UI) em `/docs`, com exemplos em todos os endpoints.
+**Diferenciais**
+
+- **Recomendações explicadas**: cada jogo vem com o motivo, como *"Porque você jogou
+  Fallout 4"*.
+- **Atualização sem retreino**: preferências alteradas valem no pedido seguinte, e jogos
+  cadastrados pela API já podem ser recomendados.
+- **Cold start tratado**: usuários novos recebem os jogos mais populares; com 1 ou 2 jogos,
+  conteúdo e popularidade ganham peso.
+- **"Não gostei"**: o jogo nunca é recomendado, e jogos parecidos com ele perdem espaço.
+- **Estratégia selecionável** (`hybrid`, `cf`, `content`, `popular`) e retreino em segundo
+  plano, com troca do modelo sem interromper a API.
+- **Escolha baseada em avaliação**: cinco modelos comparados offline; o híbrido venceu
+  (veja [Modelo e avaliação](#modelo-e-avaliação)).
 
 Stack: Python 3.12, FastAPI, SQLAlchemy 2 + Alembic, PostgreSQL 16, pandas, scipy,
 scikit-learn, Docker Compose e pytest.
@@ -70,7 +79,6 @@ Para recomeçar do zero (banco, dataset e modelo), use `docker compose down -v`.
 ## Como rodar sem Docker
 
 **Pré-requisitos:** Python 3.12 ou mais novo e um shell POSIX (`sh`; no Windows, o Git Bash).
-O banco pode ser um PostgreSQL local ou um arquivo SQLite.
 
 ```bash
 sh scripts/install.sh       # cria o .venv e instala as dependências (make install)
@@ -82,7 +90,12 @@ banco é um arquivo SQLite (`steam.db`). Para usar o PostgreSQL do compose, copi
 `.env.example` para `.env` (ele já aponta para `localhost:5432`) e suba só o banco com
 `docker compose up -d db` antes do `run.sh`.
 
-Os mesmos passos, sem os scripts:
+Se o download do dataset falhar (sem internet ou atrás de um proxy que intercepta HTTPS),
+baixe o `steam.zip` do repositório caserec pelo navegador e rode
+`export DATASET_URL=file:///caminho/para/steam.zip` antes do `run.sh`.
+
+<details>
+<summary>Passo a passo manual, sem os scripts</summary>
 
 ```bash
 python -m venv .venv
@@ -94,10 +107,6 @@ sh scripts/init.sh                      # migrações, dataset, seed e treino
 uvicorn app.main:app --reload
 ```
 
-Se o download do dataset falhar (sem internet ou atrás de um proxy que intercepta HTTPS),
-baixe o `steam.zip` do repositório caserec pelo navegador e aponte o script para ele:
-`export DATASET_URL=file:///caminho/para/steam.zip` antes do `run.sh` ou do `init.sh`.
-
 As etapas do `init.sh` também podem rodar separadas:
 
 ```bash
@@ -106,6 +115,8 @@ sh scripts/download_data.sh             # baixa e descompacta o dataset em data/
 python scripts/seed_db.py               # popula o banco (idempotente)
 python -m recsys.train                  # treina e grava artifacts/model.joblib
 ```
+
+</details>
 
 ## Usando a API
 
@@ -189,6 +200,7 @@ Variáveis de ambiente lidas pelo compose e pela API (veja o `.env.example`):
 | `API_PORT` | `8000` | porta da API na máquina |
 | `DATABASE_URL` | PostgreSQL em `localhost:5432` | conexão da API e dos scripts fora do Docker |
 | `ARTIFACTS_DIR` | `artifacts` | pasta do modelo treinado |
+| `MODEL_FILENAME` | `model.joblib` | nome do arquivo do modelo treinado |
 | `DEFAULT_K` | `10` | quantidade de recomendações quando `k` não é informado |
 | `FORCE_TRAIN` | `0` | `1` faz o `init` retreinar mesmo se o modelo já existir |
 | `TRAIN_ARGS` | vazio | argumentos extras do treino no `init` (ex.: `--no-search`) |
@@ -225,12 +237,18 @@ um separados para teste):
 | **M4 híbrido (servido)** | **0,398** | **0,403** | **0,694** | 38,5% |
 
 Detalhes do modelo, do protocolo e do ajuste de hiperparâmetros em
-[`docs/modelo.md`](docs/modelo.md). Para reproduzir:
+[`docs/modelo.md`](docs/modelo.md). Os notebooks já estão executados e podem ser lidos
+direto no GitHub: [`01_eda.ipynb`](notebooks/01_eda.ipynb) (análise exploratória) e
+[`02_comparacao_modelos.ipynb`](notebooks/02_comparacao_modelos.ipynb) (comparação dos
+modelos, com gráficos).
+
+Para reproduzir, com o `.venv` ativo:
 
 ```bash
-pip install -r notebooks/requirements.txt   # para os notebooks
+sh scripts/download_data.sh                 # dataset em data/raw/steam/
 python -m recsys.tuning                     # ajuste de α e dos pesos do híbrido
 python -m recsys.train --source files       # treino a partir dos arquivos do dataset
+pip install -r notebooks/requirements.txt   # para rodar os notebooks (Jupyter ou VS Code)
 ```
 
 ## Estrutura do repositório
@@ -277,4 +295,5 @@ Git.
 [Steam Video Games](https://www.kaggle.com/tamber/steam-video-games), publicado no Kaggle por
 Tamber, na versão processada do repositório
 [caserec/Datasets-for-Recommender-Systems](https://github.com/caserec/Datasets-for-Recommender-Systems/tree/master/Processed%20Datasets/Steam).
-São cerca de 200 mil registros de compras e horas jogadas de 12.393 usuários em 5.155 jogos.
+São cerca de 200 mil registros de compras e horas jogadas de 12.393 usuários em 5.155 jogos
+(5.153 depois da limpeza, que unifica dois nomes repetidos).
