@@ -59,11 +59,11 @@ recomendados e penalizam jogos parecidos (seção 3, M4).
 Todos os modelos seguem o contrato `Recommender` de `recsys/base.py`:
 
 ```python
-fit(interactions, games)                                   # treino
-recommend(history, k=10, exclude=None, disliked=None)      # -> list[Recommendation]
-similar_games(game_id, k=10)                               # -> list[Recommendation]
-add_game(game_id, name, tags=None)                         # jogo novo, sem retreino
-save(path) / load(path)                                    # artefato joblib
+fit(interactions, games)  # treino
+recommend(history, k=10, exclude=None, disliked=None)  # -> list[Recommendation]
+similar_games(game_id, k=10)  # -> list[Recommendation]
+add_game(game_id, name, tags=None)  # jogo novo, sem retreino
+save(path) / load(path)  # artefato joblib
 ```
 
 `Recommendation` tem `game_id`, `score` e `reason`. O modelo recebe o **histórico**
