@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
 GameName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=255)]
 Tag = Annotated[
@@ -18,6 +18,12 @@ class GameCreate(BaseModel):
     tags: list[Tag] = Field(
         default_factory=list, max_length=20, description="Gêneros ou palavras-chave opcionais."
     )
+
+    @field_validator("tags")
+    @classmethod
+    def drop_repeated_tags(cls, tags: list[str]) -> list[str]:
+        """Remove tags repetidas (depois de normalizadas), mantendo a ordem."""
+        return list(dict.fromkeys(tags))
 
 
 class GameOut(BaseModel):

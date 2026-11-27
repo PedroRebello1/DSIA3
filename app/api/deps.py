@@ -11,8 +11,8 @@ from app.services.recommender_service import RecommenderService
 DbSession = Annotated[Session, Depends(get_db)]
 Limit = Annotated[int, Query(ge=1, le=100, description="Máximo de itens na resposta.")]
 Offset = Annotated[int, Query(ge=0, description="Quantos itens pular (paginação).")]
-UserId = Annotated[int, Path(description="ID do usuário.")]
-GameId = Annotated[int, Path(description="ID do jogo.")]
+UserId = Annotated[int, Path(gt=0, description="ID do usuário.")]
+GameId = Annotated[int, Path(gt=0, description="ID do jogo.")]
 K = Annotated[int | None, Query(ge=1, le=100, description="Quantos jogos retornar.")]
 
 

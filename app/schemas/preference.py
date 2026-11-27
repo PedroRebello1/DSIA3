@@ -2,7 +2,7 @@
 
 from typing import Self
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, PositiveInt, field_validator, model_validator
 
 from app.schemas.interaction import MAX_HOURS, InteractionIn
 from app.schemas.user import ensure_unique_games
@@ -31,7 +31,7 @@ class PreferencesPatch(BaseModel):
     upsert: list[InteractionPatch] = Field(
         default_factory=list, description="Jogos a adicionar ou atualizar."
     )
-    remove: list[int] = Field(
+    remove: list[PositiveInt] = Field(
         default_factory=list, description="IDs de jogos a remover do histórico."
     )
 
