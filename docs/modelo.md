@@ -1,9 +1,15 @@
 # Modelo de recomendação
 
-A API recomenda jogos da Steam com um **modelo híbrido (M4)**. Ele combina filtragem
-colaborativa item a item, similaridade de conteúdo dos títulos e popularidade, com pesos
-que dependem do tamanho do histórico do usuário. Cada recomendação vem com o motivo
-(`reason`), por exemplo "Porque você jogou Fallout 4".
+## Resumo
+
+- O modelo servido é um **híbrido (M4)** de três componentes: filtragem colaborativa item a
+  item (item-kNN), similaridade de conteúdo dos títulos e popularidade. O peso de cada um
+  depende de quantos jogos o usuário tem.
+- Na avaliação offline com 3.757 usuários, ele é o melhor dos cinco modelos comparados:
+  **NDCG@10 de 0,398**, contra 0,385 do melhor modelo isolado (item-kNN) e 0,140 da
+  popularidade. Também lidera com históricos de 1 ou 2 jogos e cobre 38,5% do catálogo.
+- Cada recomendação vem com o motivo ("Porque você jogou Fallout 4"). Mudanças de
+  preferência e jogos novos valem na hora, sem retreino.
 
 Este documento descreve os dados, os cinco modelos comparados, o protocolo de avaliação,
 os resultados e a escolha do modelo servido. Os números são reproduzidos pelos notebooks
@@ -193,6 +199,20 @@ nenhum jogo, ele recomenda só por popularidade.
 
 ## 6. Ajuste de hiperparâmetros (`python -m recsys.tuning`)
 
+| Parâmetro | Valores testados | Escolhido | Por quê |
+|---|---|---|---|
+| Vizinhos do item-kNN | 20 / 50 / 100 | **20** | maior NDCG (0,357, contra 0,348 e 0,344) |
+| α do score de confiança | 0 / 0,25 / 0,5 / 1 / 2 | **0,25** | maior NDCG (0,3825); as horas ajudam pouco (α = 0 dá 0,3810) e α alto piora |
+| Pesos, histórico ≥ 3 jogos | 6 combinações | **0,7 / 0,2 / 0,1** | a proposta inicial já era a melhor (NDCG 0,3743) |
+| Pesos, histórico 1–2 jogos | 6 combinações | **0,3 / 0,3 / 0,4** | NDCG 0,1840, contra 0,1633 da proposta inicial (0,4 / 0,4 / 0,2) |
+
+Pesos na ordem CF / conteúdo / popularidade. Com pouco histórico, a popularidade ganha
+importância. O SVD não entrou no ajuste: com 64 fatores, ele já ficou bem atrás do item-kNN,
+que é o componente colaborativo do híbrido.
+
+<details>
+<summary>Tabelas completas do ajuste</summary>
+
 Amostra fixa de 1.500 usuários avaliados. O script roda as etapas em sequência, cada uma
 partindo do melhor valor da anterior: α na grade 0,5 / 1 / 2, depois os pesos de cada faixa
 de histórico. Por isso as tabelas de pesos abaixo usam α = 0,5. Os valores α = 0 e 0,25
@@ -242,8 +262,7 @@ do histórico de cada usuário avaliado (α = 0,5):
 Com pouco histórico, a popularidade ganha importância; acima de 0,4, o hit rate ainda sobe,
 mas NDCG, MAP e cobertura caem. Escolhido: **0,3 / 0,3 / 0,4**.
 
-O SVD não entrou no ajuste: com 64 fatores ele já ficou bem atrás do item-kNN, e o
-híbrido usa o item-kNN como componente colaborativo.
+</details>
 
 ## 7. Modelo servido
 
@@ -301,7 +320,7 @@ Na API, o artefato é carregado na subida. Depois disso:
 ## 10. Como reproduzir
 
 ```bash
-scripts/download_data.sh                # dataset em data/raw/steam/
+sh scripts/download_data.sh             # dataset em data/raw/steam/
 python -m recsys.tuning                 # tabelas da seção 6 (alguns minutos)
 python -m recsys.train --source files   # treino, avaliação e artefato
 python -m recsys.evaluation             # M0 a M3 com os parâmetros iniciais (α = 1)
