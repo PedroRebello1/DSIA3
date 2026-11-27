@@ -10,7 +10,7 @@ set -eu
 MODEL="${ARTIFACTS_DIR:-artifacts}/${MODEL_FILENAME:-model.joblib}"
 
 echo "[init] 1/4 Aplicando migrações do banco"
-alembic upgrade head
+python -m alembic upgrade head
 
 echo "[init] 2/4 Conferindo o dataset"
 sh scripts/download_data.sh
