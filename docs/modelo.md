@@ -193,7 +193,11 @@ nenhum jogo, ele recomenda só por popularidade.
 
 ## 6. Ajuste de hiperparâmetros (`python -m recsys.tuning`)
 
-Amostra fixa de 1.500 usuários avaliados; cada etapa parte do melhor valor da anterior.
+Amostra fixa de 1.500 usuários avaliados. O script roda as etapas em sequência, cada uma
+partindo do melhor valor da anterior: α na grade 0,5 / 1 / 2, depois os pesos de cada faixa
+de histórico. Por isso as tabelas de pesos abaixo usam α = 0,5. Os valores α = 0 e 0,25
+foram testados depois, com os pesos já escolhidos; essa rodada está no notebook 02
+(seção 5) e levou ao α = 0,25 do modelo servido.
 
 **k vizinhos do item-kNN** (busca de `recsys/train.py`, α = 1): 20 → NDCG 0,357;
 50 → 0,348; 100 → 0,344. Escolhido: **20**.
