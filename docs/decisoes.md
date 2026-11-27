@@ -148,17 +148,26 @@ Duas escolhas de comportamento:
   não existe;
 - **remover um jogo que não está no histórico não é erro**: o `PATCH` é idempotente.
 
-## 8. Configuração
+## 8. Docker
 
-Variáveis de ambiente (ou arquivo `.env`), lidas com `pydantic-settings` em
-`app/core/config.py`:
-
-| Variável | Padrão | Uso |
-|---|---|---|
-| `DATABASE_URL` | `postgresql+psycopg://steam:steam@localhost:5432/steam` | conexão com o banco |
-| `ARTIFACTS_DIR` | `artifacts` | pasta do modelo treinado |
-| `MODEL_FILENAME` | `model.joblib` | nome do artefato |
-| `DEFAULT_K` | `10` | quantidade de recomendações quando `k` não é informado |
+- **Ordem garantida entre os serviços**: o `init` só começa com o banco saudável
+  (*healthcheck* do `db`), e a `api` só sobe quando o `init` termina com sucesso
+  (`service_completed_successfully`). Assim, `docker compose up --build` funciona do zero,
+  sem passos manuais.
+- **`init` separado da API**: migrações, download, seed e treino rodam uma vez, e todas as
+  etapas são idempotentes (o treino é pulado se o modelo já existir). A API reinicia em
+  segundos.
+- **Volumes**: `pgdata` (banco), `data` (dataset) e `artifacts` (modelo, compartilhado entre
+  `init` e `api`).
+- **Imagem multi-stage** sobre `python:3.12-slim`: as dependências são instaladas num
+  virtualenv na primeira etapa, e só ele e o código vão para a imagem final. Ela roda com
+  um usuário sem privilégios e tem `HEALTHCHECK` em `/health`.
+- **`.dockerignore` como lista de permissão**: só entram no build o `requirements.txt`, o
+  código, os scripts e a configuração do Alembic; dados, artefatos e arquivos locais ficam
+  de fora.
+- **Python 3.12**: as versões fixadas de numpy, scipy e scikit-learn exigem 3.12 ou mais.
+- **Configuração** por variáveis de ambiente, lidas com `pydantic-settings` em
+  `app/core/config.py`; a lista completa está no [README](../README.md#configuração).
 
 ## 9. Testes
 
@@ -169,4 +178,5 @@ Variáveis de ambiente (ou arquivo `.env`), lidas com `pydantic-settings` em
 - **Artefatos isolados**: cada teste usa uma pasta temporária, para o modelo treinado na
   máquina não interferir.
 - **CI** (GitHub Actions): lint (`ruff`), testes com cobertura mínima de 80% e um *smoke
-  test* que sobe o `docker compose` e chama `/health`, uma recomendação e `/similar`.
+  test* que sobe a stack com `scripts/run.sh docker` e chama `/health`, uma recomendação e
+  `/similar`. No CI, o treino pula a busca de hiperparâmetros para ficar mais rápido.
