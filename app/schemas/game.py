@@ -10,9 +10,20 @@ Tag = Annotated[
     str, StringConstraints(strip_whitespace=True, to_lower=True, min_length=1, max_length=50)
 ]
 
+GAME_EXAMPLE = {
+    "id": 5156,
+    "name": "Hades",
+    "tags": ["roguelike", "ação", "indie"],
+    "created_at": "2026-11-27T14:00:00",
+}
+
 
 class GameCreate(BaseModel):
     """Dados para cadastrar um jogo."""
+
+    model_config = ConfigDict(
+        json_schema_extra={"examples": [{"name": "Hades", "tags": ["Roguelike", "Ação", "Indie"]}]}
+    )
 
     name: GameName = Field(description="Nome do jogo (único, sem diferenciar maiúsculas).")
     tags: list[Tag] = Field(
@@ -29,7 +40,7 @@ class GameCreate(BaseModel):
 class GameOut(BaseModel):
     """Jogo do catálogo."""
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, json_schema_extra={"examples": [GAME_EXAMPLE]})
 
     id: int = Field(description="ID do jogo.")
     name: str = Field(description="Nome do jogo.")

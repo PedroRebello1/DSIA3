@@ -38,7 +38,7 @@ def model_info(request: Request, db: DbSession, service: LoadedRecommender) -> M
     "/retrain",
     response_model=RetrainOut,
     status_code=status.HTTP_202_ACCEPTED,
-    responses=error_responses(409, 422),
+    responses=error_responses(409, 422, messages={409: "Já existe um retreino em andamento"}),
     summary="Retreina o modelo em segundo plano",
 )
 def retrain(

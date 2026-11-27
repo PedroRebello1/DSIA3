@@ -2,7 +2,7 @@
 
 from typing import Self
 
-from pydantic import BaseModel, Field, PositiveInt, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, PositiveInt, field_validator, model_validator
 
 from app.schemas.interaction import MAX_HOURS, InteractionIn
 from app.schemas.user import ensure_unique_games
@@ -10,6 +10,20 @@ from app.schemas.user import ensure_unique_games
 
 class PreferencesReplace(BaseModel):
     """Conjunto completo de preferências; substitui o histórico atual (PUT)."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "games": [
+                        {"game_id": 2, "hours": 95},
+                        {"game_id": 4, "hours": 12.5},
+                        {"game_id": 1, "disliked": True},
+                    ]
+                }
+            ]
+        }
+    )
 
     games: list[InteractionIn] = Field(description="Novo histórico completo do usuário.")
 
@@ -28,6 +42,15 @@ class InteractionPatch(BaseModel):
 class PreferencesPatch(BaseModel):
     """Alterações parciais no histórico (PATCH)."""
 
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {"upsert": [{"game_id": 4, "hours": 12.5}, {"game_id": 1, "disliked": True}]},
+                {"remove": [43]},
+            ]
+        }
+    )
+
     upsert: list[InteractionPatch] = Field(
         default_factory=list, description="Jogos a adicionar ou atualizar."
     )
@@ -39,6 +62,7 @@ class PreferencesPatch(BaseModel):
 
     @model_validator(mode="after")
     def check_consistency(self) -> Self:
+        """Exige ao menos uma alteração e proíbe o mesmo jogo em ``upsert`` e ``remove``."""
         if not self.upsert and not self.remove:
             raise ValueError("informe ao menos um jogo em 'upsert' ou 'remove'")
         overlap = {item.game_id for item in self.upsert} & set(self.remove)

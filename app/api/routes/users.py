@@ -14,7 +14,15 @@ router = APIRouter(prefix="/users", tags=["users"])
     "",
     response_model=UserDetail,
     status_code=status.HTTP_201_CREATED,
-    responses=error_responses(404, 409, 422),
+    responses=error_responses(
+        404,
+        409,
+        422,
+        messages={
+            404: "Jogos não encontrados: [99999]",
+            409: "Já existe usuário com steam_real_id 76561197960287930",
+        },
+    ),
     summary="Cria um usuário",
 )
 def create_user(data: UserCreate, db: DbSession) -> UserDetail:

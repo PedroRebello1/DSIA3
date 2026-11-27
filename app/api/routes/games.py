@@ -13,14 +13,22 @@ from app.services import games as service
 
 router = APIRouter(prefix="/games", tags=["games"])
 
-Search = Annotated[str | None, Query(max_length=100, description="Trecho do nome do jogo.")]
+Search = Annotated[
+    str | None,
+    Query(
+        max_length=100,
+        description="Trecho do nome do jogo.",
+        openapi_examples={"fallout": {"value": "fallout"}},
+    ),
+]
+NOT_FOUND = {404: "Jogo 99999 não encontrado"}
 
 
 @router.post(
     "",
     response_model=GameOut,
     status_code=status.HTTP_201_CREATED,
-    responses=error_responses(409, 422),
+    responses=error_responses(409, 422, messages={409: "Já existe o jogo 'Hades' (id 5156)"}),
     summary="Cadastra um jogo",
 )
 def create_game(data: GameCreate, db: DbSession, model: LoadedRecommender) -> GameOut:
@@ -49,7 +57,7 @@ def list_games(
 @router.get(
     "/{game_id}",
     response_model=GameOut,
-    responses=error_responses(404, 422),
+    responses=error_responses(404, 422, messages=NOT_FOUND),
     summary="Consulta um jogo",
 )
 def get_game(game_id: GameId, db: DbSession) -> GameOut:
@@ -60,11 +68,15 @@ def get_game(game_id: GameId, db: DbSession) -> GameOut:
 @router.get(
     "/{game_id}/similar",
     response_model=SimilarGamesOut,
-    responses=error_responses(404, 422),
+    responses=error_responses(404, 422, messages=NOT_FOUND),
     summary="Lista jogos parecidos",
 )
 def similar_games(
     game_id: GameId, db: DbSession, model: Recommender, k: K = None
 ) -> SimilarGamesOut:
-    """Jogos parecidos com o informado, pelo título e pelas tags (modelo de conteúdo)."""
+    """Jogos parecidos com o informado, com o motivo de cada um (`reason`).
+
+    Com o modelo treinado, combina quem jogou um também jogou o outro (item-kNN) com a
+    semelhança de título e tags (conteúdo). Sem ele, usa só o conteúdo.
+    """
     return model.similar_games(db, game_id, k or get_settings().default_k)
