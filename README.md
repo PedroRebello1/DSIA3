@@ -85,6 +85,10 @@ Para usar o PostgreSQL do compose em vez do SQLite, pule o `export`, copie o `.e
 para `.env` (ele já aponta para `localhost:5432`) e suba só o banco com
 `docker compose up -d db` antes do `init.sh`.
 
+Se o download do dataset falhar (sem internet ou atrás de um proxy que intercepta HTTPS),
+baixe o `steam.zip` do repositório caserec pelo navegador e aponte o script para ele:
+`export DATASET_URL=file:///caminho/para/steam.zip` antes do `init.sh`.
+
 As etapas do `init.sh` também podem rodar separadas:
 
 ```bash
@@ -136,7 +140,7 @@ curl "http://localhost:8000/users/12394/recommendations?k=5&strategy=content&exc
 # Cadastra um jogo novo e vê os jogos parecidos com Fallout 4
 curl -X POST http://localhost:8000/games \
   -H "Content-Type: application/json" \
-  -d '{"name": "Hades", "tags": ["roguelike", "ação"]}'
+  -d '{"name": "Hades", "tags": ["roguelike", "indie"]}'
 curl "http://localhost:8000/games/2/similar?k=5"
 
 # Informações do modelo e retreino com os dados atuais do banco
@@ -144,7 +148,10 @@ curl http://localhost:8000/model/info
 curl -X POST http://localhost:8000/model/retrain
 ```
 
-Exemplo de resposta de `GET /users/{id}/recommendations?k=3`:
+No Windows, alguns terminais não enviam acentos em UTF-8 pelo `curl -d`; para textos com
+acento, use o Swagger UI ou um arquivo (`curl --data-binary @corpo.json`).
+
+Exemplo de resposta de `GET /users/{id}/recommendations?k=3` para o usuário criado acima:
 
 ```json
 {
@@ -152,9 +159,9 @@ Exemplo de resposta de `GET /users/{id}/recommendations?k=3`:
   "strategy": "hybrid",
   "model_version": "2026-11-27T14:00:00+00:00",
   "recommendations": [
-    {"game_id": 1506, "name": "The Witcher 3 Wild Hunt - New Finisher Animations", "score": 0.678, "reason": "Porque você jogou The Witcher 3 Wild Hunt"},
-    {"game_id": 1968, "name": "The Witcher 3 Wild Hunt - Expansion Pass", "score": 0.484, "reason": "Parecido com The Witcher 3 Wild Hunt, que você jogou"},
-    {"game_id": 361, "name": "Fallout 3", "score": 0.4, "reason": "Parecido com Fallout 4, que você jogou"}
+    {"game_id": 1506, "name": "The Witcher 3 Wild Hunt - New Finisher Animations", "score": 0.501, "reason": "Porque você jogou The Witcher 3 Wild Hunt"},
+    {"game_id": 4, "name": "Fallout New Vegas", "score": 0.427, "reason": "Porque você jogou Fallout 4"},
+    {"game_id": 1968, "name": "The Witcher 3 Wild Hunt - Expansion Pass", "score": 0.425, "reason": "Parecido com The Witcher 3 Wild Hunt, que você jogou"}
   ]
 }
 ```
