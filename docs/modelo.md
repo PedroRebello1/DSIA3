@@ -297,13 +297,8 @@ O **M4 híbrido** é o modelo da API porque:
    (arquivo temporário + troca), com parâmetros, métricas e data do treino;
 5. registra o treino na tabela `model_runs` (o `GET /model/info` mostra o último).
 
-Na API, o artefato é carregado na subida. Depois disso:
-
-- **preferências** alteradas valem no próximo pedido de recomendação (o modelo recebe o
-  histórico atual do banco);
-- **jogos novos** (`POST /games`) entram no modelo de conteúdo na hora;
-- `POST /model/retrain` treina um modelo novo em segundo plano, com os dados atuais do
-  banco, e o troca pelo antigo de uma vez quando termina.
+Como a API carrega o artefato, aplica preferências e jogos novos sem retreino e retreina em
+segundo plano está em [`decisoes.md`](decisoes.md), seções 4 a 6.
 
 ## 9. Limitações
 
