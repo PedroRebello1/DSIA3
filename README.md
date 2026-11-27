@@ -46,6 +46,9 @@ segundos.
 
 Abra a documentação em <http://localhost:8000/docs>.
 
+Alternativa: `sh scripts/run.sh` faz o mesmo em segundo plano e só termina quando a API
+estiver respondendo.
+
 | Serviço | O que faz |
 |---|---|
 | `db` | PostgreSQL 16, com volume persistente e *healthcheck* |
@@ -56,7 +59,7 @@ Com `make` instalado, os atalhos são:
 
 | Comando | O que faz |
 |---|---|
-| `make up` | sobe tudo em segundo plano (`docker compose up -d --build`) |
+| `make up` | sobe tudo em segundo plano e espera a API (`sh scripts/run.sh docker`) |
 | `make logs` | acompanha os logs da API |
 | `make smoke` | confere se a stack está respondendo (`/health`, uma recomendação e `/similar`) |
 | `make train` | retreina o modelo em um container (depois reinicie a API ou use `POST /model/retrain`) |
@@ -70,6 +73,18 @@ Para recomeçar do zero (banco, dataset e modelo), use `docker compose down -v`.
 O banco pode ser um PostgreSQL local ou um arquivo SQLite.
 
 ```bash
+sh scripts/install.sh       # cria o .venv e instala as dependências (make install)
+sh scripts/run.sh local     # migrações, dataset, seed, treino e API (make run)
+```
+
+A API fica em <http://localhost:8000/docs>. Sem `DATABASE_URL` definida e sem `.env`, o
+banco é um arquivo SQLite (`steam.db`). Para usar o PostgreSQL do compose, copie o
+`.env.example` para `.env` (ele já aponta para `localhost:5432`) e suba só o banco com
+`docker compose up -d db` antes do `run.sh`.
+
+Os mesmos passos, sem os scripts:
+
+```bash
 python -m venv .venv
 source .venv/bin/activate              # Windows: .venv\Scripts\activate
 pip install -r requirements-dev.txt
@@ -79,20 +94,14 @@ sh scripts/init.sh                      # migrações, dataset, seed e treino
 uvicorn app.main:app --reload
 ```
 
-A API fica em <http://localhost:8000/docs>.
-
-Para usar o PostgreSQL do compose em vez do SQLite, pule o `export`, copie o `.env.example`
-para `.env` (ele já aponta para `localhost:5432`) e suba só o banco com
-`docker compose up -d db` antes do `init.sh`.
-
 Se o download do dataset falhar (sem internet ou atrás de um proxy que intercepta HTTPS),
 baixe o `steam.zip` do repositório caserec pelo navegador e aponte o script para ele:
-`export DATASET_URL=file:///caminho/para/steam.zip` antes do `init.sh`.
+`export DATASET_URL=file:///caminho/para/steam.zip` antes do `run.sh` ou do `init.sh`.
 
 As etapas do `init.sh` também podem rodar separadas:
 
 ```bash
-alembic upgrade head                    # cria as tabelas
+python -m alembic upgrade head          # cria as tabelas
 sh scripts/download_data.sh             # baixa e descompacta o dataset em data/raw/steam/
 python scripts/seed_db.py               # popula o banco (idempotente)
 python -m recsys.train                  # treina e grava artifacts/model.joblib
@@ -191,7 +200,7 @@ sem a busca de hiperparâmetros.
 ## Testes e qualidade
 
 ```bash
-make install    # cria o .venv e instala as dependências de desenvolvimento
+make install    # cria o .venv e instala as dependências (sh scripts/install.sh)
 make test       # pytest com relatório de cobertura (mínimo de 80%)
 make lint       # ruff check + ruff format --check
 ```
@@ -237,7 +246,7 @@ recsys/                 modelos de recomendação
   models/               popularidade, item-kNN, SVD, conteúdo e híbrido
   evaluation.py         métricas e protocolo de avaliação offline
   train.py · tuning.py  treino do modelo servido e ajuste de hiperparâmetros
-scripts/                download do dataset, seed, init do compose e smoke test
+scripts/                instalação, execução, download do dataset, seed, init e smoke test
 notebooks/              01_eda.ipynb (análise exploratória), 02_comparacao_modelos.ipynb
 tests/                  unit/, integration/ e conftest.py (fixtures)
 docs/                   modelo.md e decisoes.md
