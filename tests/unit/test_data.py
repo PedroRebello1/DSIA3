@@ -164,7 +164,7 @@ def test_sparsity_de_matriz_vazia():
 @pytest.mark.skipif(
     not (data.DEFAULT_DATA_DIR / data.PURCHASE_FILE).exists(), reason="dataset real ausente"
 )
-def test_dataset_real_bate_com_o_planejamento():
+def test_dataset_real_tem_os_numeros_da_analise_exploratoria():
     ds = load_dataset()
 
     # 5.155 jogos no original; 2 repetem o nome de outro e são unificados.

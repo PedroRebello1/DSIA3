@@ -219,7 +219,7 @@ que poucos jogos muito jogados dominem o histórico e pioram a acurácia. Escolh
 
 | Pesos | NDCG | MAP | Hit rate | Cobertura |
 |---|---:|---:|---:|---:|
-| **0,7 / 0,2 / 0,1** (planejamento) | **0,3743** | **0,2969** | **0,6707** | 26,3% |
+| **0,7 / 0,2 / 0,1** (proposta inicial) | **0,3743** | **0,2969** | **0,6707** | 26,3% |
 | 0,8 / 0,2 / 0 | 0,3731 | 0,2967 | 0,6687 | 26,3% |
 | 0,8 / 0,1 / 0,1 | 0,3711 | 0,2956 | 0,6687 | 25,9% |
 | 0,9 / 0,1 / 0 | 0,3704 | 0,2950 | 0,6673 | 26,2% |
@@ -232,7 +232,7 @@ do histórico de cada usuário avaliado (α = 0,5):
 
 | Pesos | NDCG | MAP | Hit rate | Cobertura |
 |---|---:|---:|---:|---:|
-| 0,4 / 0,4 / 0,2 (planejamento) | 0,1633 | 0,1107 | 0,4273 | 50,1% |
+| 0,4 / 0,4 / 0,2 (proposta inicial) | 0,1633 | 0,1107 | 0,4273 | 50,1% |
 | 0,6 / 0,2 / 0,2 | 0,1758 | 0,1204 | 0,4433 | 47,5% |
 | **0,3 / 0,3 / 0,4** | **0,1840** | **0,1240** | 0,4813 | 45,9% |
 | 0,3 / 0,2 / 0,5 | 0,1784 | 0,1129 | 0,5027 | 42,9% |
@@ -296,7 +296,7 @@ Na API, o artefato é carregado na subida. Depois disso:
 - A avaliação é offline e por amostragem aleatória do histórico, não temporal: o dataset
   não tem datas.
 - Ficaram de fora o ALS implícito (biblioteca `implicit`) e o re-ranqueamento por
-  diversidade (MMR), previstos como opcionais no planejamento.
+  diversidade (MMR), que eram opcionais.
 
 ## 10. Como reproduzir
 

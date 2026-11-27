@@ -117,5 +117,5 @@ def test_parametros_invalidos(kwargs):
         HybridRecommender(**kwargs)
 
 
-def test_pesos_padrao_seguem_o_planejamento():
+def test_pesos_padrao_por_faixa_de_historico():
     assert DEFAULT_WEIGHTS[0] == (0, (0.0, 0.0, 1.0))

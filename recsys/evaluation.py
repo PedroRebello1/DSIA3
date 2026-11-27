@@ -231,7 +231,7 @@ def to_markdown(table: pd.DataFrame, digits: int = 4) -> str:
 
 
 def default_models() -> dict[str, Recommender]:
-    """M0 a M3 com os hiperparâmetros iniciais do planejamento."""
+    """M0 a M3 com os hiperparâmetros iniciais, de antes do ajuste (item-kNN com 50 vizinhos)."""
     from recsys.models.content import ContentRecommender
     from recsys.models.item_knn import ItemKNNRecommender
     from recsys.models.popularity import PopularityRecommender

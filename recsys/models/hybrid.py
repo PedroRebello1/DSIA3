@@ -25,8 +25,8 @@ from recsys.models.popularity import PopularityRecommender
 
 Weights = tuple[float, float, float]  # (CF, conteúdo, popularidade)
 
-# (tamanho mínimo do histórico, pesos). Partiu da tabela da seção 4.2 do planejamento;
-# a faixa de 1–2 jogos foi ajustada na avaliação (ver recsys/tuning.py e docs/modelo.md).
+# (tamanho mínimo do histórico, pesos). Partiu de uma proposta inicial (1–2 jogos: 0,4 / 0,4 /
+# 0,2); a faixa de 1–2 jogos foi ajustada na avaliação (ver recsys/tuning.py e docs/modelo.md).
 DEFAULT_WEIGHTS: tuple[tuple[int, Weights], ...] = (
     (0, (0.0, 0.0, 1.0)),
     (1, (0.3, 0.3, 0.4)),
